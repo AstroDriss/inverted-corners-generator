@@ -15,6 +15,7 @@ import {
 import InvertedTopRightCorner from "../assets/InvertedTopRightCorner";
 import ColorInput from "./ColorInput";
 import Stroke from "../assets/Stroke";
+import { FiLink2 } from "react-icons/fi";
 
 interface Props {
   setup: Setup;
@@ -37,7 +38,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 const Input = ({ icon, blurValue, ...rest }: InputProps) => {
   return (
-    <div className="relative">
+    <div className="relative flex">
       {icon && (
         <div className="absolute left-1 top-1/2 -translate-y-1/2 text-gray-500">
           {icon}
@@ -102,7 +103,7 @@ const Controllers = ({
   const [aspectRatio, setAspectRatio] = useState(
     gcd(setup.width, setup.height)
   );
-  const dimensionsFormRef = useRef(null);
+  const dimensionsFormRef = useRef<HTMLFormElement>(null);
   const cornerRadiusFormRef = useRef(null);
 
   const updateDimensions = (e: React.FormEvent) => {
@@ -110,16 +111,41 @@ const Controllers = ({
     if (!dimensionsFormRef.current) return;
 
     const data = new FormData(dimensionsFormRef.current);
-    const width = +data.get("width")!;
-    const height = +data.get("height")!;
+    let width = +data.get("width")!;
+    let height = +data.get("height")!;
 
     if (isNaN(width) || isNaN(height))
       return alert("Dimension values must be a number");
 
     if (setup.width === width && setup.height === height) return;
 
-    updateCornerRadius({ width, height });
-    setSetup({ width, height });
+    if (setup.lockAspectRatio) {
+      const ratio = setup.width / setup.height;
+      if (width !== setup.width) {
+        height = +(width / ratio).toFixed(2);
+
+        (
+          dimensionsFormRef.current.querySelector(
+            "[name='height']"
+          )! as HTMLInputElement
+        ).value = String(height);
+      } else if (height !== setup.height) {
+        width = +(height * ratio).toFixed(2);
+
+        (
+          dimensionsFormRef.current.querySelector(
+            "[name='width']"
+          )! as HTMLInputElement
+        ).value = String(width);
+      }
+    }
+
+    updateCornerRadius({
+      width,
+      height,
+      lockAspectRatio: setup.lockAspectRatio,
+    });
+    setSetup((prev) => ({ ...prev, width: width, height: height }));
     setAspectRatio(gcd(width, height));
   };
 
@@ -231,7 +257,21 @@ const Controllers = ({
   return (
     <div className="rounded-2xl bg-bg overflow-auto flex flex-col gap-4 [scrollbar-width:thin] shadow-[0_0_9px_rgb(0_0_0_/_.1)] md:h-[85vh] p-4">
       <div>
-        <h2 className="mb-2">Dimensions:</h2>
+        <div className="mb-2 flex items-center">
+          <h2>Dimensions:</h2>
+          <p className="flex ml-auto items-center gap-2">
+            <span className="sr-only">Aspect ratio:</span>
+            {setup.width / aspectRatio}:{setup.height / aspectRatio}
+            {setup.width == setup.height ? (
+              <TbSquare size={20} />
+            ) : setup.width > setup.height ? (
+              <TbRectangle size={20} />
+            ) : (
+              <TbRectangleVertical size={20} />
+            )}
+          </p>
+        </div>
+
         <div className="flex items-center gap-2">
           <form
             ref={dimensionsFormRef}
@@ -245,7 +285,23 @@ const Controllers = ({
               defaultValue={setup.width}
               onBlur={updateDimensions}
             />
-            &times;
+            <button
+              type="button"
+              title="Lock Aspect Ratio"
+              className={`border border-black p-[.4rem] rounded-md ${
+                setup.lockAspectRatio
+                  ? "bg-frappe text-white"
+                  : "hover:bg-frappe/50"
+              }`}
+              onClick={() =>
+                setSetup((prev) => ({
+                  ...prev,
+                  lockAspectRatio: !prev.lockAspectRatio,
+                }))
+              }
+            >
+              <FiLink2 />
+            </button>
             <Input
               icon={<span>H</span>}
               name="height"
@@ -255,17 +311,6 @@ const Controllers = ({
             />
             <button className="sr-only" />
           </form>
-          <p className="flex ml-auto items-center gap-2">
-            <span className="sr-only">Aspect ratio:</span>
-            {setup.width / aspectRatio}:{setup.height / aspectRatio}
-            {setup.width == setup.height ? (
-              <TbSquare size={23} />
-            ) : setup.width > setup.height ? (
-              <TbRectangle size={23} />
-            ) : (
-              <TbRectangleVertical size={23} />
-            )}
-          </p>
         </div>
       </div>
 

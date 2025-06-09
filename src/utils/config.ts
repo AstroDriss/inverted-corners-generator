@@ -3,6 +3,7 @@ const p = new URL(location.href).searchParams;
 export const DEFAULT_SETUP = {
   width: Number(p.get("w")) || 100,
   height: Number(p.get("h")) || 100,
+  lockAspectRatio: false,
 } as Setup;
 
 export const DEFAULT_BORDER_WIDTH = Number(p.get("b")) || 0;

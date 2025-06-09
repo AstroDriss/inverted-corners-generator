@@ -4,6 +4,7 @@ declare global {
   interface Setup {
     width: number;
     height: number;
+    lockAspectRatio: boolean;
   }
   interface CornerRadius {
     tl: number;
