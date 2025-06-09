@@ -20,6 +20,12 @@
     -webkit-appearance: none;
     margin: 0;
   }
+  .grab {
+    cursor: grab;
+  }
+  .grabbing {
+    cursor: grabbing !important;
+  }
 }
 
 @layer components {

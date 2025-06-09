@@ -25,10 +25,27 @@ const Handlers = ({
     const controller = new AbortController();
 
     circlesRef.current.addEventListener(
+      "pointerover",
+      () => {
+        document.body.classList.add("grab");
+      },
+      { signal: controller.signal }
+    );
+
+    circlesRef.current.addEventListener(
+      "pointerout",
+      () => {
+        document.body.classList.remove("grab");
+      },
+      { signal: controller.signal }
+    );
+
+    circlesRef.current.addEventListener(
       "pointerdown",
       (e) => {
         e.preventDefault();
         if (!e.target) return;
+        document.body.classList.add("grabbing");
         const circle = e.target as SVGCircleElement;
         activeHandler.current = +circle.getAttribute("data-index")!;
 
@@ -81,6 +98,7 @@ const Handlers = ({
     document.addEventListener(
       "pointerup",
       () => {
+        document.body.classList.remove("grabbing");
         activeHandler.current = null;
       },
       { signal: controller.signal }
@@ -91,7 +109,11 @@ const Handlers = ({
 
   return (
     <>
-      <g ref={circlesRef} className="fill-coffee stroke-gray-300">
+      <g
+        ref={circlesRef}
+        className={`fill-coffee stroke-gray-300 `}
+        strokeWidth=".3%"
+      >
         {!invertedCorners.tl.inverted && (
           <circle
             data-index={0}
