@@ -109,6 +109,44 @@ const Handlers = ({
 
   return (
     <>
+      <g stroke="dodgerblue" fill="none" strokeWidth=".5%">
+        <path
+          className={`${activeHandler.current !== 0 && "hidden"}`}
+          d={`M${borderWidth} ${cornerRadius.tl + borderWidth} A${
+            cornerRadius.tl
+          } ${cornerRadius.tl} 0 0 1 ${
+            cornerRadius.tl + borderWidth
+          } ${borderWidth}`}
+        />
+
+        <path
+          className={`${activeHandler.current !== 1 && "hidden"}`}
+          d={`M${setup.width + borderWidth - cornerRadius.tr} ${borderWidth} A${
+            cornerRadius.tr
+          } ${cornerRadius.tr} 0 0 1 ${setup.width + borderWidth} ${
+            cornerRadius.tr + borderWidth
+          }`}
+        />
+
+        <path
+          className={`${activeHandler.current !== 2 && "hidden"}`}
+          d={`M${setup.width + borderWidth - cornerRadius.br} ${
+            borderWidth + setup.height
+          } A${cornerRadius.br} ${cornerRadius.br} 0 0 0 ${
+            setup.width + borderWidth
+          } ${setup.height - cornerRadius.br + borderWidth}`}
+        />
+
+        <path
+          className={`${activeHandler.current !== 3 && "hidden"}`}
+          d={`M${borderWidth + cornerRadius.bl} ${
+            borderWidth + setup.height
+          } A${cornerRadius.bl} ${cornerRadius.bl} 0 0 1 ${borderWidth} ${
+            setup.height + borderWidth - cornerRadius.bl
+          }`}
+        />
+      </g>
+
       <g
         ref={circlesRef}
         className={`fill-coffee stroke-gray-300 `}

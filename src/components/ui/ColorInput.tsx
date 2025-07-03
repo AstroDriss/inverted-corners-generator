@@ -37,6 +37,7 @@ const ColorInput = ({ value, setValue, label }: Props) => {
         aria-label={label}
         value={value}
         onChange={(e) => setValue(e.target.value)}
+        onBlur={(e) => setTextInput(e.target.value.replace("#", ""))}
         className="border h-[1.45rem] w-[1.45rem]"
         type="color"
       />

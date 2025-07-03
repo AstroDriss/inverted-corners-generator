@@ -13,7 +13,9 @@ import {
   RxCornerTopRight,
 } from "react-icons/rx";
 import InvertedTopRightCorner from "../assets/InvertedTopRightCorner";
-import ColorInput from "./ColorInput";
+import ColorInput from "./ui/ColorInput";
+import Input from "./ui/Input";
+import CheckBox from "./ui/CheckBox";
 import Stroke from "../assets/Stroke";
 import { FiLink2 } from "react-icons/fi";
 
@@ -31,60 +33,6 @@ interface Props {
   backgroundColor: string;
   setBackgroundColor: React.Dispatch<React.SetStateAction<string>>;
 }
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  icon?: React.ReactElement;
-  blurValue?: number;
-}
-
-const Input = ({ icon, blurValue, ...rest }: InputProps) => {
-  return (
-    <div className="relative flex">
-      {icon && (
-        <div className="absolute left-1 top-1/2 -translate-y-1/2 text-gray-500">
-          {icon}
-        </div>
-      )}
-      <input
-        {...rest}
-        ref={(el) => {
-          if (!el || !blurValue) return;
-
-          const controller = new AbortController();
-          el.addEventListener(
-            "blur",
-            () => {
-              el.value = String(blurValue);
-            },
-            {
-              signal: controller.signal,
-            }
-          );
-          return () => controller.abort();
-        }}
-        type="number"
-        step="any"
-        min="0"
-        className={`${
-          icon ? "pl-6" : ""
-        } border py-0.5 px-2 rounded-[5px] appearance-none w-full`}
-      />
-    </div>
-  );
-};
-
-interface CheckBoxProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  icon?: React.ReactElement;
-}
-const CheckBox = ({ icon, children, className, ...rest }: CheckBoxProps) => (
-  <label
-    className={`flex text-sm gap-2 justify-between items-center cursor-pointer p-2 rounded-md ${className}`}
-  >
-    <p className="flex items-center gap-2">
-      {icon} {children}
-    </p>
-    <input type="checkbox" {...rest} role="switch" />
-  </label>
-);
 
 const Controllers = ({
   setup,
@@ -111,8 +59,8 @@ const Controllers = ({
     if (!dimensionsFormRef.current) return;
 
     const data = new FormData(dimensionsFormRef.current);
-    let width = +data.get("width")!;
-    let height = +data.get("height")!;
+    let width = Math.floor(+data.get("width")!);
+    let height = Math.floor(+data.get("height")!);
 
     if (isNaN(width) || isNaN(height))
       return alert("Dimension values must be a number");
@@ -122,7 +70,7 @@ const Controllers = ({
     if (setup.lockAspectRatio) {
       const ratio = setup.width / setup.height;
       if (width !== setup.width) {
-        height = +(width / ratio).toFixed(2);
+        height = Math.floor(width / ratio);
 
         (
           dimensionsFormRef.current.querySelector(
@@ -130,7 +78,7 @@ const Controllers = ({
           )! as HTMLInputElement
         ).value = String(height);
       } else if (height !== setup.height) {
-        width = +(height * ratio).toFixed(2);
+        width = Math.floor(height * ratio);
 
         (
           dimensionsFormRef.current.querySelector(
