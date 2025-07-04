@@ -72,6 +72,7 @@ function App() {
             viewBox={`0 0 ${setup.width + borderWidth * 2} ${
               setup.height + borderWidth * 2
             }`}
+            id="preview"
             xmlns="http://www.w3.org/2000/svg"
             className="max-h-[70vh] overflow-visible"
           >

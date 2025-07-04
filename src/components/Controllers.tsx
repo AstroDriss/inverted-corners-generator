@@ -480,6 +480,7 @@ const Controllers = ({
             onChange={(e) => setBorderWidth(Number(e.target.value))}
             value={borderWidth}
             icon={<Stroke />}
+            gap="1.9em"
           />
           <ColorInput
             label="border color"

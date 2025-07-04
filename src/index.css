@@ -20,11 +20,23 @@
     -webkit-appearance: none;
     margin: 0;
   }
+  svg {
+    touch-action: none;
+  }
+  .handlers circle {
+    r: 1%;
+  }
   .grab {
     cursor: grab;
   }
   .grabbing {
     cursor: grabbing !important;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .handlers circle {
+    r: 2%;
   }
 }
 

@@ -1,10 +1,10 @@
-
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactElement;
   blurValue?: number;
+  gap?: string;
 }
 
-const Input = ({ icon, blurValue, ...rest }: InputProps) => {
+const Input = ({ icon, blurValue, gap = "1.5em", ...rest }: InputProps) => {
   return (
     <div className="relative flex">
       {icon && (
@@ -32,12 +32,11 @@ const Input = ({ icon, blurValue, ...rest }: InputProps) => {
         type="number"
         step="any"
         min="0"
-        className={`${
-          icon ? "pl-6" : ""
-        } border py-0.5 px-2 rounded-[5px] appearance-none w-full`}
+        style={{ ...(icon && { paddingLeft: gap }) }}
+        className={`border py-0.5 px-2 rounded-[5px] appearance-none w-full`}
       />
     </div>
   );
 };
 
-export default Input
+export default Input;

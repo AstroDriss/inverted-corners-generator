@@ -18,9 +18,11 @@ const Handlers = ({
 }: Props) => {
   const activeHandler = useRef<number>(null);
   const circlesRef = useRef<SVGGElement>(null);
+  const svgRef = useRef<SVGElement>(null);
   const lastMouse = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
+    svgRef.current = document.querySelector("svg#preview");
     if (!circlesRef.current) return;
     const controller = new AbortController();
 
@@ -44,6 +46,7 @@ const Handlers = ({
       "pointerdown",
       (e) => {
         e.preventDefault();
+        svgRef.current?.setPointerCapture(e.pointerId);
         if (!e.target) return;
         document.body.classList.add("grabbing");
         const circle = e.target as SVGCircleElement;
@@ -97,10 +100,17 @@ const Handlers = ({
 
     document.addEventListener(
       "pointerup",
-      () => {
-        document.body.classList.remove("grabbing");
+      (e) => {
+        svgRef.current?.releasePointerCapture(e.pointerId);
         activeHandler.current = null;
+        document.body.classList.remove("grabbing");
       },
+      { signal: controller.signal }
+    );
+
+    document.addEventListener(
+      "pointercancel",
+      (e) => svgRef.current?.releasePointerCapture(e.pointerId),
       { signal: controller.signal }
     );
 
@@ -149,7 +159,7 @@ const Handlers = ({
 
       <g
         ref={circlesRef}
-        className={`fill-coffee stroke-gray-300 `}
+        className={`fill-coffee stroke-gray-300 handlers`}
         strokeWidth=".3%"
       >
         {!invertedCorners.tl.inverted && (
@@ -157,7 +167,6 @@ const Handlers = ({
             data-index={0}
             cx={cornerRadius.tl + borderWidth}
             cy={cornerRadius.tl + borderWidth}
-            r="1%"
           />
         )}
         {!invertedCorners.tr.inverted && (
@@ -165,7 +174,6 @@ const Handlers = ({
             data-index={1}
             cx={setup.width - cornerRadius.tr + borderWidth}
             cy={cornerRadius.tr + borderWidth}
-            r="1%"
           />
         )}
         {!invertedCorners.br.inverted && (
@@ -173,7 +181,6 @@ const Handlers = ({
             data-index={2}
             cx={setup.width - cornerRadius.br + borderWidth}
             cy={setup.height - cornerRadius.br + borderWidth}
-            r="1%"
           />
         )}
         {!invertedCorners.bl.inverted && (
@@ -181,7 +188,6 @@ const Handlers = ({
             data-index={3}
             cx={cornerRadius.bl + borderWidth}
             cy={setup.height - cornerRadius.bl + borderWidth}
-            r="1%"
           />
         )}
       </g>
