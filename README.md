@@ -4,7 +4,7 @@
 
 A tool to help you generate inverted border radii for you CSS components, powered by SVG path. [try it here!](https://corner-inverter.douiri.org).
 
-![corner inverter tool screenshot](./public/screenshot.png)
+![corner inverter tool screenshot](./public/corner-inverter-preview.png)
 
 ## Why do we need this tool
 
