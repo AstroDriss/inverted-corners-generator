@@ -19,7 +19,6 @@ const Handlers = ({
   const activeHandler = useRef<number>(null);
   const circlesRef = useRef<SVGGElement>(null);
   const svgRef = useRef<SVGElement>(null);
-  const lastMouse = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     svgRef.current = document.querySelector("svg#preview");
@@ -51,9 +50,6 @@ const Handlers = ({
         document.body.classList.add("grabbing");
         const circle = e.target as SVGCircleElement;
         activeHandler.current = +circle.getAttribute("data-index")!;
-
-        lastMouse.current.x = e.clientX;
-        lastMouse.current.y = e.clientY;
       },
       { signal: controller.signal }
     );
@@ -61,36 +57,38 @@ const Handlers = ({
     document.addEventListener(
       "pointermove",
       (e) => {
-        if (activeHandler.current === null) return;
+        if (activeHandler.current === null || svgRef.current === null) return;
 
-        const dx = (e.clientX - lastMouse.current.x) * 0.1;
-        const dy = (e.clientY - lastMouse.current.y) * 0.1;
-        lastMouse.current.x = e.clientX;
-        lastMouse.current.y = e.clientY;
+        const box = svgRef.current.getBoundingClientRect();
+        const x = ((e.clientX - box.left) * setup.width) / box.width; // Get relative x and Scale it
+        const y = ((e.clientY - box.top) * setup.height) / box.height;
 
         switch (activeHandler.current) {
           case 0: // Top Left
             setCornerRadius((prev) => ({
               ...prev,
-              tl: constraint(setup, prev.tl + dx + dy),
+              tl: constraint(setup, Math.min(x, y)),
             }));
             break;
           case 1: // Top Right
             setCornerRadius((prev) => ({
               ...prev,
-              tr: constraint(setup, prev.tr - dx + dy),
+              tr: constraint(setup, Math.min(setup.width - x, y)),
             }));
             break;
           case 2: // Bottom Right
             setCornerRadius((prev) => ({
               ...prev,
-              br: constraint(setup, prev.br - dx - dy),
+              br: constraint(
+                setup,
+                Math.min(setup.width - x, setup.height - y)
+              ),
             }));
             break;
           case 3: // Bottom Left
             setCornerRadius((prev) => ({
               ...prev,
-              bl: constraint(setup, prev.bl + dx - dy),
+              bl: constraint(setup, Math.min(x, setup.height - y)),
             }));
             break;
         }
