@@ -1,6 +1,6 @@
 import { CiExport } from "react-icons/ci";
 import ExportModal from "./ExportModal";
-import { useRef } from "react";
+import { useState } from "react";
 import { BsGithub } from "react-icons/bs";
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
 }
 
 const Header = ({ pathConfig }: Props) => {
-  const modalRef = useRef<HTMLDialogElement>(null);
+  const [showModal, setShowModal] = useState(false);
 
   return (
     <>
@@ -33,7 +33,7 @@ const Header = ({ pathConfig }: Props) => {
             <BsGithub size={25} />
           </a>
           <button
-            onClick={() => modalRef.current?.showModal()}
+            onClick={() => setShowModal(true)}
             className="flex items-center gap-2 bg-frappe text-gray-50 hover:brightness-110 transition-all py-2 px-4 rounded-2xl"
           >
             <CiExport size={25} /> Export
@@ -41,7 +41,9 @@ const Header = ({ pathConfig }: Props) => {
         </div>
       </header>
 
-      <ExportModal ref={modalRef} pathConfig={pathConfig} />
+      {showModal && (
+        <ExportModal setShowModal={setShowModal} pathConfig={pathConfig} />
+      )}
     </>
   );
 };

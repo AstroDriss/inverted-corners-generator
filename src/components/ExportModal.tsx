@@ -15,10 +15,10 @@ interface Props {
     borderColor: string;
     backgroundColor: string;
   };
-  ref: React.RefObject<HTMLDialogElement | null>;
+  setShowModal: (val: boolean) => void;
 }
 
-const ExportModal = ({ pathConfig, ref }: Props) => {
+const ExportModal = ({ pathConfig, setShowModal }: Props) => {
   const {
     setup,
     invertedCorners,
@@ -28,6 +28,7 @@ const ExportModal = ({ pathConfig, ref }: Props) => {
     backgroundColor,
   } = pathConfig;
 
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const innerPath = useRef("");
   const outerPath = useRef("");
   const svgCode = useRef("");
@@ -40,6 +41,10 @@ const ExportModal = ({ pathConfig, ref }: Props) => {
     const cd = gcd(setup.width, setup.height);
     return setup.width / cd + " / " + setup.height / cd;
   };
+
+  useEffect(() => {
+    dialogRef.current?.showModal();
+  }, []);
 
   useEffect(() => {
     innerPath.current = generatePath(setup, cornerRadius, invertedCorners, {
@@ -172,13 +177,13 @@ const ExportModal = ({ pathConfig, ref }: Props) => {
   return (
     <>
       <dialog
-        ref={ref}
+        ref={dialogRef}
         className="@container fixed w-xl left-1/2 top-1/2 -translate-1/2 p-5 rounded-2xl"
       >
         <div className="flex items-center justify-between mb-7">
           <h2 className="text-2xl">Export Your Work</h2>
           <button
-            onClick={() => ref.current?.close()}
+            onClick={() => setShowModal(false)}
             className="p-2 rounded-full bg-bg"
           >
             <IoClose />
