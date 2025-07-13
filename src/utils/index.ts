@@ -230,3 +230,34 @@ export const generateBorderPath = (
 
   return path;
 };
+
+const round = (n: number) => parseFloat(n.toFixed(4));
+
+// prettier-ignore
+export function normalizeSVGPath(path: string, width: number, height: number): string {
+  return path.replace(/([MLHVAC])([^MLHVACZ]*)/gi, (_, command, args) => {
+    const values = args.trim().split(/[\s,]+/).map(parseFloat);
+
+    switch (command.toUpperCase()) {
+      case 'M':
+      case 'L':
+        return `${command}${round(values[0] / width)},${round(values[1] / height)}`;
+      case 'H':
+        return `${command}${round(values[0] / width)}`;
+      case 'V':
+        return `${command}${round(values[0] / height)}`;
+      case 'A':
+        return `${command}${[
+          round(values[0] / width),  // rx
+          round(values[1] / height), // ry
+          values[2],                 // x-axis-rotation
+          values[3],                 // large-arc-flag
+          values[4],                 // sweep-flag
+          round(values[5] / width),  // x
+          round(values[6] / height)  // y
+        ].join(',')}`;
+      default:
+        return command; // Z
+    }
+  });
+}
