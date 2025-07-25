@@ -1,6 +1,4 @@
-![Corner Inverter Logo](./public/icon.svg)
-
-# Corner Inverter
+<h1 align="center"><img src="./public/icon.svg" alt="Corner Inverter Tool" /><br> Corner Inverter</h1>
 
 A tool to help you generate inverted border radii for you CSS components, powered by SVG path. [try it here!](https://corner-inverter.douiri.org).
 
