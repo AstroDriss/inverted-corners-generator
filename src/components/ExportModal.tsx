@@ -158,7 +158,7 @@ const ExportModal = ({ pathConfig, setShowModal }: Props) => {
   };
 
   const getSVGClipPathHTMLCode =
-    () => `<svg xmlns="http://www.w3.org/2000/svg" style="display: block;" width="0" height="0">
+    () => `<svg xmlns="http://www.w3.org/2000/svg" style="display: block;position: absolute" width="0" height="0">
   <defs><clipPath id="clip" clipPathUnits="objectBoundingBox">
   <path d="${normalizeSVGPath(
     outerPath.current,

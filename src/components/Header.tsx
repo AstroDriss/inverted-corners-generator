@@ -26,7 +26,7 @@ const Header = ({ pathConfig }: Props) => {
         <div className="flex items-center gap-4">
           <a
             href="https://github.com/AstroDriss/inverted-corners-generator"
-            title="this project on github"
+            title="Corner Inverter on github"
             aria-label="Visit this project at github"
             target="_blank"
           >

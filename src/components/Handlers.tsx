@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
-import { constraint } from "../utils";
+import { useEffect, useRef, useState } from "react";
+import { constraint, debounce } from "../utils";
+import InvertedTopRightCorner from "../assets/InvertedTopRightCorner";
 
 interface Props {
   cornerRadius: CornerRadius;
@@ -190,6 +191,124 @@ const Handlers = ({
         )}
       </g>
     </>
+  );
+};
+
+export const CornerInvertedHandler = ({
+  pathRef,
+  setup,
+  invertedCorners,
+  setInvertedCorners,
+}: {
+  pathRef: React.RefObject<SVGPathElement | null>;
+  setup: Setup;
+  invertedCorners: InvertedCorners;
+  setInvertedCorners: React.Dispatch<React.SetStateAction<InvertedCorners>>;
+}) => {
+  const [box, setBox] = useState<null | DOMRect>(null);
+
+  const updateBoundingBox = () => {
+    const element = document.querySelector(
+      "svg#preview .inner-path"
+    ) as SVGRectElement;
+
+    if (!element) return;
+    setBox(element.getBoundingClientRect());
+  };
+
+  useEffect(() => {
+    const dUpdateBoundingBox = debounce(updateBoundingBox, 50);
+    const id = setTimeout(updateBoundingBox, 0);
+    addEventListener("resize", dUpdateBoundingBox);
+    return () => {
+      clearTimeout(id);
+      removeEventListener("resize", dUpdateBoundingBox);
+    };
+  }, [setup, pathRef.current]);
+
+  if (!box) return null;
+
+  const cellSize = 40;
+
+  return (
+    <div className="hidden md:contents">
+      <button
+        style={{ left: box.left + "px", top: box.top - cellSize + "px" }}
+        className={`absolute p-1 rounded-full border border-coffee ${
+          invertedCorners.tl.inverted
+            ? "bg-coffee text-bg"
+            : "bg-bg hover:bg-coffee/10"
+        }`}
+        onClick={() =>
+          setInvertedCorners((prev) => ({
+            ...prev,
+            tl: { ...prev.tl, inverted: !prev.tl.inverted },
+          }))
+        }
+      >
+        <InvertedTopRightCorner rotation={-90} />
+      </button>
+
+      <button
+        style={{
+          left: box.left + box.width - cellSize / 2 + "px",
+          top: box.top - cellSize + "px",
+        }}
+        className={`absolute p-1 rounded-full border border-coffee ${
+          invertedCorners.tr.inverted
+            ? "bg-coffee text-bg"
+            : "bg-bg hover:bg-coffee/10"
+        }`}
+        onClick={() =>
+          setInvertedCorners((prev) => ({
+            ...prev,
+            tr: { ...prev.tr, inverted: !prev.tr.inverted },
+          }))
+        }
+      >
+        <InvertedTopRightCorner rotation={0} />
+      </button>
+
+      <button
+        style={{
+          left: box.left + box.width - cellSize / 2 + "px",
+          top: box.top + box.height + cellSize / 2 + "px",
+        }}
+        className={`absolute p-1 rounded-full border border-coffee ${
+          invertedCorners.br.inverted
+            ? "bg-coffee text-bg"
+            : "bg-bg hover:bg-coffee/10"
+        }`}
+        onClick={() =>
+          setInvertedCorners((prev) => ({
+            ...prev,
+            br: { ...prev.br, inverted: !prev.br.inverted },
+          }))
+        }
+      >
+        <InvertedTopRightCorner rotation={90} />
+      </button>
+
+      <button
+        style={{
+          left: box.left + "px",
+          top: box.top + box.height + cellSize / 2 + "px",
+        }}
+        className={`absolute p-1 rounded-full border border-coffee ${
+          invertedCorners.bl.inverted
+            ? "bg-coffee text-bg"
+            : "bg-bg hover:bg-coffee/10"
+        }`}
+        onClick={() =>
+          setInvertedCorners((prev) => ({
+            ...prev,
+            bl: { ...prev.bl, inverted: !prev.bl.inverted },
+          }))
+        }
+      >
+        <InvertedTopRightCorner rotation={180} />
+      </button>
+    </div>
   );
 };
 

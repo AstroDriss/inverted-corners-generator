@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import Header from "./components/Header.tsx";
 import Controllers from "./components/Controllers.tsx";
-import Handlers from "./components/Handlers.tsx";
+import Handlers, { CornerInvertedHandler } from "./components/Handlers.tsx";
 import { generateBorderPath, generatePath } from "./utils/index.ts";
 import {
   DEFAULT_BACKGROUND_COLOR,
@@ -101,7 +101,12 @@ function App() {
             />
 
             <path ref={outerPathRef} d={outerPathCode} fill={borderColor} />
-            <path ref={pathRef} d={pathCode} fill={backgroundColor} />
+            <path
+              className="inner-path"
+              ref={pathRef}
+              d={pathCode}
+              fill={backgroundColor}
+            />
 
             <Handlers
               cornerRadius={cornerRadius}
@@ -112,6 +117,12 @@ function App() {
             />
           </svg>
         </div>
+        <CornerInvertedHandler
+          setup={setup}
+          pathRef={pathRef}
+          invertedCorners={invertedCorners}
+          setInvertedCorners={setInvertedCorners}
+        />
 
         {/* <a
           href="#content"

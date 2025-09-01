@@ -3,6 +3,9 @@ export const gcd = (a: number, b: number): number =>
 const A = (r: number, x: number, y: number, sweep = 1) =>
   `A${r},${r} 0,0,${sweep} ${x},${y}`;
 const L = (x: number, y: number) => `L${x},${y}`;
+const H = (x: number) => `H${x}`;
+const V = (y: number) => `V${y}`;
+const M = (x: number, y: number) => `M${x},${y}`;
 
 export const fixed = (value: number) =>
   value % 1 === 0 ? value : +value.toFixed(2);
@@ -26,12 +29,12 @@ export const generatePath = (
   const { tl, tr, bl, br } = invertedCorners;
   const { x, y } = position;
 
-  let path = `M${x + topLeft},${y}`;
+  let path = M(x + topLeft, y);
 
   // Top Side
   if (tr.inverted) {
-    path += `H${x + (width - tr.width - tr.roundness)}`;
-  } else path += `H${x + width - topRight}`;
+    path += H(x + (width - tr.width - tr.roundness));
+  } else path += H(x + width - topRight);
 
   //   top right corner
   if (tr.inverted) {
@@ -45,8 +48,8 @@ export const generatePath = (
 
   // Right Side
   if (br.inverted) {
-    path += `V${y + height - br.height - br.roundness}`;
-  } else path += `V${y + height - bottomRight}`;
+    path += V(y + height - br.height - br.roundness);
+  } else path += V(y + height - bottomRight);
 
   // Bottom right corner
   if (br.inverted) {
@@ -64,8 +67,8 @@ export const generatePath = (
   } else path += A(bottomRight, x + width - bottomRight, y + height);
 
   // Bottom Side
-  if (bl.inverted) path += `H${x + bl.width + bl.roundness}`;
-  else path += `H${x + bottomLeft}`;
+  if (bl.inverted) path += H(x + bl.width + bl.roundness);
+  else path += H(x + bottomLeft);
 
   // Bottom Left corner
   if (bl.inverted) {
@@ -78,8 +81,8 @@ export const generatePath = (
   } else path += A(bottomLeft, x, y + height - bottomLeft);
 
   // Left Side
-  if (tl.inverted) path += `V${y + tl.height + tl.roundness}`;
-  else path += `V${y + topLeft}`;
+  if (tl.inverted) path += V(y + tl.height + tl.roundness);
+  else path += V(y + topLeft);
 
   // top left corner
   if (tl.inverted) {
@@ -89,7 +92,7 @@ export const generatePath = (
       A(tl.roundness, x + tl.width, y + tl.height - tl.roundness, 0) +
       L(x + tl.width, y + tl.roundness) +
       A(tl.roundness, x + tl.width + tl.roundness, y);
-  } else path += `A${topLeft},${topLeft} 0,0,1 ${x + topLeft},${y}Z`;
+  } else path += A(topLeft, x + topLeft, y) + `Z`;
 
   return path;
 };
@@ -153,8 +156,8 @@ export const generateBorderPath = (
 
   // Right Side
   if (br.inverted) {
-    path += `V${outerHeight - br.height - br.roundness}`;
-  } else path += `V${outerHeight - bottomRight}`;
+    path += V(outerHeight - br.height - br.roundness);
+  } else path += V(outerHeight - bottomRight);
 
   // Bottom Right Corner
   if (br.inverted) {
@@ -188,8 +191,8 @@ export const generateBorderPath = (
     );
 
   // Bottom Side
-  if (bl.inverted) path += `H${bl.width + bl.roundness + borderWidth}`;
-  else path += `H${bottomLeft + borderWidth}`;
+  if (bl.inverted) path += H(bl.width + bl.roundness + borderWidth);
+  else path += H(bottomLeft + borderWidth);
 
   // Bottom Left Corner
   if (bl.inverted) {
@@ -207,8 +210,8 @@ export const generateBorderPath = (
   } else path += A(bottomLeft + borderWidth, 0, outerHeight - bottomLeft);
 
   // Left Side
-  if (tl.inverted) path += `V${tl.height + tl.roundness + borderWidth}`;
-  else path += `V${topLeft + borderWidth}`;
+  if (tl.inverted) path += V(tl.height + tl.roundness + borderWidth);
+  else path += V(topLeft + borderWidth);
 
   // Top Left Corner
   if (tl.inverted) {
@@ -223,10 +226,7 @@ export const generateBorderPath = (
       ) +
       L(tl.width, tl.roundness + borderWidth) +
       A(tl.roundness + borderWidth, tl.width + tl.roundness + borderWidth, 0);
-  } else
-    path += `A${topLeft + borderWidth},${topLeft + borderWidth} 0,0,1 ${
-      topLeft + borderWidth
-    },0Z`;
+  } else path += A(topLeft + borderWidth, topLeft + borderWidth, 0) + "Z";
 
   return path;
 };
@@ -260,4 +260,14 @@ export function normalizeSVGPath(path: string, width: number, height: number): s
         return command; // Z
     }
   });
+}
+
+export function debounce(func: Function, wait: number) {
+  let timeout: number;
+  const debounced = (...args: any[]) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(args), wait);
+  };
+  debounced.cancel = () => clearTimeout(timeout);
+  return debounced;
 }
