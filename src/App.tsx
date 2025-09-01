@@ -94,9 +94,9 @@ function App() {
             </defs>
 
             <rect
-              width="500%"
-              height="500%"
-              className="-translate-[200%]"
+              width={90000}
+              height={90000}
+              className="-translate-[45000px]"
               fill="url(#grid)"
             />
 
