@@ -59,8 +59,8 @@ const Controllers = ({
     if (!dimensionsFormRef.current) return;
 
     const data = new FormData(dimensionsFormRef.current);
-    let width = Math.floor(+data.get("width")!);
-    let height = Math.floor(+data.get("height")!);
+    let width = Math.round(+data.get("width")!);
+    let height = Math.round(+data.get("height")!);
 
     if (isNaN(width) || isNaN(height))
       return alert("Dimension values must be a number");
@@ -68,9 +68,8 @@ const Controllers = ({
     if (setup.width === width && setup.height === height) return;
 
     if (setup.lockAspectRatio) {
-      const ratio = setup.width / setup.height;
       if (width !== setup.width) {
-        height = Math.floor(width / ratio);
+        height = Math.round(width / setup.lockAspectRatio);
 
         (
           dimensionsFormRef.current.querySelector(
@@ -78,7 +77,7 @@ const Controllers = ({
           )! as HTMLInputElement
         ).value = String(height);
       } else if (height !== setup.height) {
-        width = Math.floor(height * ratio);
+        width = Math.round(height * setup.lockAspectRatio);
 
         (
           dimensionsFormRef.current.querySelector(
@@ -86,6 +85,17 @@ const Controllers = ({
           )! as HTMLInputElement
         ).value = String(width);
       }
+    } else {
+      (
+        dimensionsFormRef.current.querySelector(
+          "[name='width']"
+        ) as HTMLInputElement
+      ).value = String(width);
+      (
+        dimensionsFormRef.current.querySelector(
+          "[name='height']"
+        ) as HTMLInputElement
+      ).value = String(height);
     }
 
     updateCornerRadius({
@@ -93,7 +103,7 @@ const Controllers = ({
       height,
       lockAspectRatio: setup.lockAspectRatio,
     });
-    setSetup((prev) => ({ ...prev, width: width, height: height }));
+    setSetup((prev) => ({ ...prev, width, height }));
     setAspectRatio(gcd(width, height));
   };
 
@@ -244,7 +254,9 @@ const Controllers = ({
               onClick={() =>
                 setSetup((prev) => ({
                   ...prev,
-                  lockAspectRatio: !prev.lockAspectRatio,
+                  lockAspectRatio: prev.lockAspectRatio
+                    ? null
+                    : prev.width / prev.height,
                 }))
               }
             >
