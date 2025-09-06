@@ -1,23 +1,19 @@
 import { useRef, useState } from "react";
-import { constraint, fixed, gcd } from "../utils";
+import { areAllEqual, constraint, fixed, gcd } from "../utils";
 import {
   TbBorderCorners,
   TbRectangle,
   TbRectangleVertical,
   TbSquare,
 } from "react-icons/tb";
-import {
-  RxCornerBottomLeft,
-  RxCornerBottomRight,
-  RxCornerTopLeft,
-  RxCornerTopRight,
-} from "react-icons/rx";
+import { RxCornerTopLeft, RxCornerTopRight } from "react-icons/rx";
 import InvertedTopRightCorner from "../assets/InvertedTopRightCorner";
 import ColorInput from "./ui/ColorInput";
 import Input from "./ui/Input";
 import CheckBox from "./ui/CheckBox";
 import Stroke from "../assets/Stroke";
 import { FiLink2 } from "react-icons/fi";
+import { BsGear } from "react-icons/bs";
 
 interface Props {
   setup: Setup;
@@ -53,6 +49,13 @@ const Controllers = ({
   );
   const dimensionsFormRef = useRef<HTMLFormElement>(null);
   const cornerRadiusFormRef = useRef(null);
+
+  const [expand, setExpand] = useState({
+    tl: false,
+    tr: false,
+    br: false,
+    bl: false,
+  });
 
   const updateDimensions = (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,33 +157,33 @@ const Controllers = ({
 
       const maxWidth = {
         tl: tr.inverted
-          ? width - tr.roundness - tl.roundness - tr.width
-          : width - radTR - tl.roundness,
+          ? width - tr.corners[0] - tl.corners[2] - tr.width
+          : width - radTR - tl.corners[2],
 
         tr: tl.inverted
-          ? width - tr.roundness - tl.roundness - tl.width
-          : width - radTL - tr.roundness,
+          ? width - tr.corners[0] - tl.corners[2] - tl.width
+          : width - radTL - tr.corners[0],
         bl: br.inverted
-          ? width - br.roundness - bl.roundness - br.width
-          : width - radBR - bl.roundness,
+          ? width - br.corners[2] - bl.corners[0] - br.width
+          : width - radBR - bl.corners[0],
         br: bl.inverted
-          ? width - br.roundness - bl.roundness - bl.width
-          : width - radBL - br.roundness,
+          ? width - br.corners[2] - bl.corners[0] - bl.width
+          : width - radBL - br.corners[2],
       };
 
       const maxHeight = {
         tl: bl.inverted
-          ? height - tl.roundness - bl.roundness - bl.height
-          : height - radBL - tl.roundness,
+          ? height - tl.corners[0] - bl.corners[2] - bl.height
+          : height - radBL - tl.corners[0],
         tr: br.inverted
-          ? height - tr.roundness - br.roundness - br.height
-          : height - radTR - br.roundness,
+          ? height - tr.corners[2] - br.corners[0] - br.height
+          : height - radTR - br.corners[0],
         bl: tl.inverted
-          ? height - bl.roundness - tl.roundness - tl.height
-          : height - radTL - bl.roundness,
+          ? height - bl.corners[2] - tl.corners[0] - tl.height
+          : height - radTL - bl.corners[2],
         br: tr.inverted
-          ? height - br.roundness - tr.roundness - tr.height
-          : height - radBR - tr.roundness,
+          ? height - br.corners[0] - tr.corners[2] - tr.height
+          : height - radBR - tr.corners[2],
       };
 
       return {
@@ -191,7 +194,7 @@ const Controllers = ({
             Math.min(
               maxWidth[corner],
               Math.max(
-                prev[corner].roundness * 2,
+                prev[corner].corners[0] * 2,
                 newValues.width ?? prev[corner].width
               )
             )
@@ -200,17 +203,81 @@ const Controllers = ({
             Math.min(
               maxHeight[corner],
               Math.max(
-                prev[corner].roundness * 2,
+                prev[corner].corners[2] * 2,
                 newValues.height ?? prev[corner].height
               )
             )
           ),
-          roundness: fixed(newValues.roundness ?? prev[corner].roundness),
           inverted: newValues.inverted ?? prev[corner].inverted,
+          corners: newValues.corners ?? prev[corner].corners,
         },
       };
     });
   };
+
+  const updateInvertedCornerRadius = (
+    cornerKey: keyof typeof invertedCorners,
+    index: number,
+    value: number
+  ) => {
+    const current = invertedCorners[cornerKey].corners;
+    const updated: [number, number, number] = [...current] as [
+      number,
+      number,
+      number
+    ];
+    updated[index] = value;
+
+    updateInvertedCorners(cornerKey, { corners: updated });
+  };
+
+  function getInvertedCornerInputs(corner: keyof CornerRadius) {
+    return (
+      <>
+        <div className="relative">
+          <Input
+            icon={<RxCornerTopRight />}
+            onChange={(e) =>
+              updateInvertedCorners(corner, {
+                corners: [+e.target.value, +e.target.value, +e.target.value],
+              })
+            }
+            aria-label="top left inverted corner's roundness"
+            value={
+              areAllEqual(invertedCorners[corner].corners)
+                ? invertedCorners[corner].corners[0]
+                : ""
+            }
+            placeholder="MIX"
+            className="pr-5 placeholder:text-sm"
+          />
+
+          <button
+            className="absolute right-1 bg-bg top-2"
+            onClick={() =>
+              setExpand((prev) => ({ ...prev, [corner]: !prev[corner] }))
+            }
+            title="Advanced"
+          >
+            <BsGear className={expand[corner] ? "" : "fill-gray-500"} />
+          </button>
+        </div>
+
+        <div className={expand[corner] ? "contents" : "hidden"}>
+          {[0, 1, 2].map((i) => (
+            <Input
+              key={i}
+              icon={<span>R{i + 1}</span>}
+              value={invertedCorners[corner].corners[i]}
+              onChange={(e) =>
+                updateInvertedCornerRadius(corner, i, +e.target.value)
+              }
+            />
+          ))}
+        </div>
+      </>
+    );
+  }
 
   return (
     <div className="rounded-2xl bg-bg overflow-auto flex flex-col gap-4 [scrollbar-width:thin] shadow-[0_0_9px_rgb(0_0_0_/_.1)] md:h-[85vh] p-4">
@@ -292,34 +359,32 @@ const Controllers = ({
           />
 
           <div className="grid grid-cols-2 gap-2 mt-2">
-            <Input
-              icon={<RxCornerTopLeft />}
-              name="tl"
-              aria-label="top left radius"
-              onChange={updateSpecificCornerRadius}
-              value={cornerRadius.tl}
-            />
-            <Input
-              icon={<RxCornerTopRight />}
-              name="tr"
-              aria-label="top right radius"
-              onChange={updateSpecificCornerRadius}
-              value={cornerRadius.tr}
-            />
-            <Input
-              icon={<RxCornerBottomLeft />}
-              name="bl"
-              aria-label="bottom left radius"
-              onChange={updateSpecificCornerRadius}
-              value={cornerRadius.bl}
-            />
-            <Input
-              icon={<RxCornerBottomRight />}
-              name="br"
-              aria-label="bottom right radius"
-              onChange={updateSpecificCornerRadius}
-              value={cornerRadius.br}
-            />
+            {(["tl", "tr", "bl", "br"] as (keyof CornerRadius)[]).map(
+              (corner) => {
+                const rotationMap = {
+                  tl: 0,
+                  tr: 90,
+                  br: 180,
+                  bl: 270,
+                };
+                return (
+                  <Input
+                    icon={
+                      <RxCornerTopLeft
+                        style={{
+                          transform: `rotate(${rotationMap[corner]}deg)`,
+                        }}
+                      />
+                    }
+                    key={corner}
+                    name={corner}
+                    aria-label={`${corner} radius`}
+                    onChange={updateSpecificCornerRadius}
+                    value={cornerRadius[corner]}
+                  />
+                );
+              }
+            )}
           </div>
         </form>
       </div>
@@ -334,7 +399,8 @@ const Controllers = ({
           >
             Top Left
           </CheckBox>
-          <div className="flex gap-2 mt-1">
+
+          <div className="grid grid-cols-3 gap-2 mt-1">
             <Input
               icon={<span>W</span>}
               onChange={(e) =>
@@ -353,15 +419,7 @@ const Controllers = ({
               defaultValue={invertedCorners.tl.height}
               blurValue={invertedCorners.tl.height}
             />
-            <Input
-              icon={<RxCornerTopRight />}
-              onChange={(e) =>
-                updateInvertedCorners("tl", { roundness: +e.target.value! })
-              }
-              aria-label="top left inverted corner's roundness"
-              defaultValue={invertedCorners.tl.roundness}
-              blurValue={invertedCorners.tl.roundness}
-            />
+            {getInvertedCornerInputs("tl")}
           </div>
         </div>
 
@@ -373,7 +431,7 @@ const Controllers = ({
           >
             Top Right
           </CheckBox>
-          <div className="flex gap-2 mt-1">
+          <div className="grid grid-cols-3 gap-2 mt-1">
             <Input
               icon={<span>W</span>}
               onChange={(e) =>
@@ -392,15 +450,8 @@ const Controllers = ({
               defaultValue={invertedCorners.tr.height}
               blurValue={invertedCorners.tr.height}
             />
-            <Input
-              icon={<RxCornerTopRight />}
-              onChange={(e) =>
-                updateInvertedCorners("tr", { roundness: +e.target.value! })
-              }
-              aria-label="top right inverted corner's roundness"
-              defaultValue={invertedCorners.tr.roundness}
-              blurValue={invertedCorners.tr.roundness}
-            />
+
+            {getInvertedCornerInputs("tr")}
           </div>
         </div>
 
@@ -412,7 +463,7 @@ const Controllers = ({
           >
             Bottom Right
           </CheckBox>
-          <div className="flex gap-2 mt-1">
+          <div className="grid grid-cols-3 gap-2 mt-1">
             <Input
               icon={<span>W</span>}
               onChange={(e) =>
@@ -431,15 +482,8 @@ const Controllers = ({
               defaultValue={invertedCorners.br.height}
               blurValue={invertedCorners.br.height}
             />
-            <Input
-              icon={<RxCornerTopRight />}
-              onChange={(e) =>
-                updateInvertedCorners("br", { roundness: +e.target.value! })
-              }
-              aria-label="bottom right inverted corner's roundness"
-              defaultValue={invertedCorners.br.roundness}
-              blurValue={invertedCorners.br.roundness}
-            />
+
+            {getInvertedCornerInputs("br")}
           </div>
         </div>
 
@@ -451,7 +495,7 @@ const Controllers = ({
           >
             Bottom Left
           </CheckBox>
-          <div className="flex gap-2 mt-1">
+          <div className="grid grid-cols-3 gap-2 mt-1">
             <Input
               icon={<span>W</span>}
               onChange={(e) =>
@@ -470,15 +514,7 @@ const Controllers = ({
               defaultValue={invertedCorners.bl.height}
               blurValue={invertedCorners.bl.height}
             />
-            <Input
-              icon={<RxCornerTopRight />}
-              onChange={(e) =>
-                updateInvertedCorners("bl", { roundness: +e.target.value! })
-              }
-              aria-label="bottom left inverted corner's roundness"
-              defaultValue={invertedCorners.bl.roundness}
-              blurValue={invertedCorners.bl.roundness}
-            />
+            {getInvertedCornerInputs("bl")}
           </div>
         </div>
       </div>

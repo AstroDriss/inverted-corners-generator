@@ -1,9 +1,11 @@
+import { getCorners } from ".";
+
 const p = new URL(location.href).searchParams;
 
 export const DEFAULT_SETUP = {
   width: Number(p.get("w")) || 100,
   height: Number(p.get("h")) || 100,
-  lockAspectRatio: false,
+  lockAspectRatio: null,
 } as Setup;
 
 export const DEFAULT_BORDER_WIDTH = Number(p.get("b")) || 0;
@@ -18,11 +20,12 @@ export const DEFAULT_CORNER_RADIUS = {
   bl: 10,
 } as CornerRadius;
 
+// prettier-ignore
 export const DEFAULT_INVERTED_CORNERS = {
-  tl: { width: 20, height: 30, roundness: 10, inverted: false },
-  tr: { width: 60, height: 30, roundness: 10, inverted: true },
-  br: { width: 30, height: 20, roundness: 10, inverted: false },
-  bl: { width: 20, height: 20, roundness: 10, inverted: true },
+  tl: { width: 20, height: 30, roundness: 10, inverted: false, corners: [10, 10, 10] },
+  tr: { width: 60, height: 30, roundness: 10, inverted: true, corners: [10, 10, 10] },
+  br: { width: 30, height: 20, roundness: 10, inverted: false, corners: [10, 10, 10] },
+  bl: { width: 20, height: 20, roundness: 10, inverted: true, corners: [10, 10, 10] },
 } as InvertedCorners;
 
 export const getInitialCornerRadius = () => {
@@ -57,10 +60,13 @@ export const getInitialInvertedCornersValues = () => {
       const [values, inverted] = corner.split(":");
 
       const [w, h, r] = values.split("x");
+      const rList = r && r.split("-").map(Number);
+
       invertedCorners[key].width = Number(w) ?? invertedCorners[key].width;
       invertedCorners[key].height = Number(h) ?? invertedCorners[key].height;
-      invertedCorners[key].roundness =
-        Number(r) ?? invertedCorners[key].roundness;
+      invertedCorners[key].corners = rList
+        ? getCorners(rList)
+        : invertedCorners[key].corners;
       invertedCorners[key].inverted = inverted == "1";
     }
   });

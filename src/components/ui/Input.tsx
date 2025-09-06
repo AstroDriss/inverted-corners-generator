@@ -4,7 +4,13 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   gap?: string;
 }
 
-const Input = ({ icon, blurValue, gap = "1.5em", ...rest }: InputProps) => {
+const Input = ({
+  icon,
+  blurValue,
+  gap = "1.5em",
+  className = "",
+  ...rest
+}: InputProps) => {
   return (
     <div className="relative flex">
       {icon && (
@@ -33,7 +39,7 @@ const Input = ({ icon, blurValue, gap = "1.5em", ...rest }: InputProps) => {
         step="any"
         min="0"
         style={{ ...(icon && { paddingLeft: gap }) }}
-        className={`border py-0.5 px-2 rounded-[5px] appearance-none w-full`}
+        className={`border py-0.5 px-2 rounded-[5px] appearance-none w-full ${className}`}
       />
     </div>
   );

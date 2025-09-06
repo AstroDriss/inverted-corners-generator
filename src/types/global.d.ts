@@ -16,25 +16,25 @@ declare global {
     tl: {
       width: number;
       height: number;
-      roundness: number;
+      corners: [number, number, number];
       inverted: boolean;
     };
     tr: {
       width: number;
       height: number;
-      roundness: number;
+      corners: [number, number, number];
       inverted: boolean;
     };
     br: {
       width: number;
       height: number;
-      roundness: number;
+      corners: [number, number, number];
       inverted: boolean;
     };
     bl: {
       width: number;
       height: number;
-      roundness: number;
+      corners: [number, number, number];
       inverted: boolean;
     };
   }

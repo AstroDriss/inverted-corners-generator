@@ -187,16 +187,23 @@ const ExportModal = ({ pathConfig, setShowModal }: Props) => {
 }`;
 
   const copyURL = () => {
+    const getCorners = (rList: [number, number, number]) => {
+      if (rList[0] === rList[1] && rList[0] === rList[2]) return rList[0];
+      return rList.join("-");
+    };
+
     const r = `r=${cornerRadius.tl},${cornerRadius.tr},${cornerRadius.br},${cornerRadius.bl}`;
 
     const { tl, tr, br, bl } = invertedCorners;
-    const ic = `ic=${tl.width}x${tl.height}x${tl.roundness}:${Number(
+    const ic = `ic=${tl.width}x${tl.height}x${getCorners(tl.corners)}:${Number(
       tl.inverted
-    )},${tr.width}x${tr.height}x${tr.roundness}:${Number(tr.inverted)},${
-      br.width
-    }x${br.height}x${br.roundness}:${Number(br.inverted)},${bl.width}x${
-      bl.height
-    }x${bl.roundness}:${Number(bl.inverted)}`;
+    )},${tr.width}x${tr.height}x${getCorners(tr.corners)}:${Number(
+      tr.inverted
+    )},${br.width}x${br.height}x${getCorners(br.corners)}:${Number(
+      br.inverted
+    )},${bl.width}x${bl.height}x${getCorners(bl.corners)}:${Number(
+      bl.inverted
+    )}`;
 
     const tracking =
       "utm_source=copy&utm_medium=share&utm_campaign=code_export";

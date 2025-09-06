@@ -2,7 +2,6 @@ export const gcd = (a: number, b: number): number =>
   b === 0 ? a : gcd(b, a % b); // greatest common divisor
 const A = (r: number, x: number, y: number, sweep = 1) =>
   `A${r},${r} 0,0,${sweep} ${x},${y}`;
-const L = (x: number, y: number) => `L${x},${y}`;
 const H = (x: number) => `H${x}`;
 const V = (y: number) => `V${y}`;
 const M = (x: number, y: number) => `M${x},${y}`;
@@ -12,6 +11,57 @@ export const fixed = (value: number) =>
 
 export const constraint = (setup: Setup, value: number) =>
   fixed(Math.max(0, Math.min(value, setup.width / 2, setup.height / 2)));
+
+function drawInvertedCorner(
+  {
+    width,
+    height,
+    corners,
+  }: { width: number; height: number; corners: number[] },
+  origin: { x: number; y: number },
+  direction: "tr" | "br" | "bl" | "tl"
+) {
+  const [c0, c1, c2] = corners;
+  const { x, y } = origin;
+
+  switch (direction) {
+    case "tr":
+      return (
+        A(c0, x, y + c0) +
+        V(y + height - c1) +
+        A(c1, x + c1, y + height, 0) +
+        H(x + width - c2) +
+        A(c2, x + width, y + height + c2)
+      );
+
+    case "br":
+      return (
+        A(c0, x - c0, y) +
+        H(x - width + c1) +
+        A(c1, x - width, y + c1, 0) +
+        V(y + height - c2) +
+        A(c2, x - width - c2, y + height)
+      );
+
+    case "bl":
+      return (
+        A(c0, x, y - c0) +
+        V(y - height + c1) +
+        A(c1, x - c1, y - height, 0) +
+        H(x - width + c2) +
+        A(c2, x - width, y - height - c2)
+      );
+
+    case "tl":
+      return (
+        A(c0, x + c0, y) +
+        H(x + width - c1) +
+        A(c1, x + width, y - c1, 0) +
+        V(y - height + c2) +
+        A(c2, x + width + c2, y - height)
+      );
+  }
+}
 
 export const generatePath = (
   setup: Setup,
@@ -32,66 +82,43 @@ export const generatePath = (
   let path = M(x + topLeft, y);
 
   // Top Side
-  if (tr.inverted) {
-    path += H(x + (width - tr.width - tr.roundness));
-  } else path += H(x + width - topRight);
+  path += tr.inverted
+    ? H(x + width - tr.width - tr.corners[0])
+    : H(x + width - topRight);
 
   //   top right corner
   if (tr.inverted) {
-    path +=
-      A(tr.roundness, x + width - tr.width, y + tr.roundness) +
-      L(x + width - tr.width, y + tr.height - tr.roundness) +
-      A(tr.roundness, x + width - tr.width + tr.roundness, y + tr.height, 0) +
-      L(x + width - tr.roundness, y + tr.height) +
-      A(tr.roundness, x + width, y + tr.height + tr.roundness);
+    path += drawInvertedCorner(tr, { x: x + width - tr.width, y }, "tr");
   } else path += A(topRight, x + width, y + topRight);
 
   // Right Side
-  if (br.inverted) {
-    path += V(y + height - br.height - br.roundness);
-  } else path += V(y + height - bottomRight);
+  path += br.inverted
+    ? V(y + height - br.height - br.corners[0])
+    : V(y + height - bottomRight);
 
   // Bottom right corner
   if (br.inverted) {
-    path +=
-      A(br.roundness, x + width - br.roundness, y + height - br.height) +
-      L(x + width - br.width + br.roundness, y + height - br.height) +
-      A(
-        br.roundness,
-        x + width - br.width,
-        y + height - br.height + br.roundness,
-        0
-      ) +
-      L(x + width - br.width, y + height - br.roundness) +
-      A(br.roundness, x + width - br.width - br.roundness, y + height);
+    path += drawInvertedCorner(
+      br,
+      { x: x + width, y: y + height - br.height },
+      "br"
+    );
   } else path += A(bottomRight, x + width - bottomRight, y + height);
 
   // Bottom Side
-  if (bl.inverted) path += H(x + bl.width + bl.roundness);
-  else path += H(x + bottomLeft);
+  path += bl.inverted ? H(x + bl.width + bl.corners[0]) : H(x + bottomLeft);
 
   // Bottom Left corner
   if (bl.inverted) {
-    path +=
-      A(bl.roundness, x + bl.width, y + height - bl.roundness) +
-      L(x + bl.width, y + height - bl.height + bl.roundness) +
-      A(bl.roundness, x + bl.width - bl.roundness, y + height - bl.height, 0) +
-      L(x + bl.roundness, y + height - bl.height) +
-      A(bl.roundness, x, y + height - bl.height - bl.roundness);
+    path += drawInvertedCorner(bl, { x: x + bl.width, y: y + height }, "bl");
   } else path += A(bottomLeft, x, y + height - bottomLeft);
 
   // Left Side
-  if (tl.inverted) path += V(y + tl.height + tl.roundness);
-  else path += V(y + topLeft);
+  path += tl.inverted ? V(y + tl.height + tl.corners[0]) : V(y + topLeft);
 
   // top left corner
   if (tl.inverted) {
-    path +=
-      A(tl.roundness, x + tl.roundness, y + tl.height) +
-      L(x + tl.width - tl.roundness, y + tl.height) +
-      A(tl.roundness, x + tl.width, y + tl.height - tl.roundness, 0) +
-      L(x + tl.width, y + tl.roundness) +
-      A(tl.roundness, x + tl.width + tl.roundness, y);
+    path += drawInvertedCorner(tl, { x: x, y: y + tl.height }, "tl");
   } else path += A(topLeft, x + topLeft, y) + `Z`;
 
   return path;
@@ -116,36 +143,33 @@ export const generateBorderPath = (
   const outerWidth = width + borderWidth;
   const outerHeight = height + borderWidth;
 
-  let path = `M${topLeft + borderWidth},0`;
+  let path = M(topLeft + borderWidth, 0);
 
   // Top Side
   if (tr.inverted) {
-    path += `H${outerWidth - tr.width - tr.roundness}`;
-  } else path += `H${outerWidth - topRight}`;
+    path += H(outerWidth - tr.width - tr.corners[0]);
+  } else path += H(outerWidth - topRight);
 
   // Top Right Corner
   if (tr.inverted) {
     path +=
       A(
-        tr.roundness + borderWidth,
+        tr.corners[0] + borderWidth,
         outerWidth - tr.width + borderWidth,
-        tr.roundness + borderWidth
+        tr.corners[0] + borderWidth
       ) +
-      L(
-        outerWidth - tr.width + borderWidth,
-        tr.height - tr.roundness + borderWidth
-      ) +
+      V(tr.height - tr.corners[1] + borderWidth) +
       A(
-        tr.roundness - borderWidth,
-        outerWidth - tr.width + tr.roundness,
+        tr.corners[1] - borderWidth,
+        outerWidth - tr.width + tr.corners[1],
         tr.height,
         0
       ) +
-      L(outerWidth - tr.roundness, tr.height) +
+      H(outerWidth - tr.corners[2]) +
       A(
-        tr.roundness + borderWidth,
+        tr.corners[2] + borderWidth,
         outerWidth + borderWidth,
-        tr.height + tr.roundness + borderWidth
+        tr.height + tr.corners[2] + borderWidth
       );
   } else
     path += A(
@@ -156,31 +180,28 @@ export const generateBorderPath = (
 
   // Right Side
   if (br.inverted) {
-    path += V(outerHeight - br.height - br.roundness);
+    path += V(outerHeight - br.height - br.corners[0]);
   } else path += V(outerHeight - bottomRight);
 
   // Bottom Right Corner
   if (br.inverted) {
     path +=
       A(
-        br.roundness + borderWidth,
-        outerWidth - br.roundness,
+        br.corners[0] + borderWidth,
+        outerWidth - br.corners[0],
         outerHeight - br.height + borderWidth
       ) +
-      L(
-        outerWidth - br.width + br.roundness,
-        outerHeight - br.height + borderWidth
-      ) +
+      H(outerWidth - br.width + br.corners[1]) +
       A(
-        br.roundness - borderWidth,
+        br.corners[1] - borderWidth,
         outerWidth - br.width + borderWidth,
-        outerHeight - br.height + br.roundness,
+        outerHeight - br.height + br.corners[1],
         0
       ) +
-      L(outerWidth - br.width + borderWidth, outerHeight - br.roundness) +
+      V(outerHeight - br.corners[2]) +
       A(
-        br.roundness + borderWidth,
-        outerWidth - br.width - br.roundness,
+        br.corners[2] + borderWidth,
+        outerWidth - br.width - br.corners[2],
         outerHeight + borderWidth
       );
   } else
@@ -191,41 +212,45 @@ export const generateBorderPath = (
     );
 
   // Bottom Side
-  if (bl.inverted) path += H(bl.width + bl.roundness + borderWidth);
+  if (bl.inverted) path += H(bl.width + bl.corners[0] + borderWidth);
   else path += H(bottomLeft + borderWidth);
 
   // Bottom Left Corner
   if (bl.inverted) {
     path +=
-      A(bl.roundness + borderWidth, bl.width, outerHeight - bl.roundness) +
-      L(bl.width, outerHeight - bl.height + bl.roundness) +
+      A(bl.corners[0] + borderWidth, bl.width, outerHeight - bl.corners[0]) +
+      V(outerHeight - bl.height + bl.corners[1]) +
       A(
-        bl.roundness - borderWidth,
-        bl.width - bl.roundness + borderWidth,
+        bl.corners[1] - borderWidth,
+        bl.width - bl.corners[1] + borderWidth,
         outerHeight - bl.height + borderWidth,
         0
       ) +
-      L(bl.roundness + borderWidth, outerHeight - bl.height + borderWidth) +
-      A(bl.roundness + borderWidth, 0, outerHeight - bl.height - bl.roundness);
+      H(bl.corners[2] + borderWidth) +
+      A(
+        bl.corners[2] + borderWidth,
+        0,
+        outerHeight - bl.height - bl.corners[2]
+      );
   } else path += A(bottomLeft + borderWidth, 0, outerHeight - bottomLeft);
 
   // Left Side
-  if (tl.inverted) path += V(tl.height + tl.roundness + borderWidth);
+  if (tl.inverted) path += V(tl.height + tl.corners[0] + borderWidth);
   else path += V(topLeft + borderWidth);
 
   // Top Left Corner
   if (tl.inverted) {
     path +=
-      A(tl.roundness + borderWidth, tl.roundness + borderWidth, tl.height) +
-      L(tl.width - tl.roundness + borderWidth, tl.height) +
+      A(tl.corners[0] + borderWidth, tl.corners[0] + borderWidth, tl.height) +
+      H(tl.width - tl.corners[1] + borderWidth) +
       A(
-        tl.roundness - borderWidth,
+        tl.corners[1] - borderWidth,
         tl.width,
-        tl.height - tl.roundness + borderWidth,
+        tl.height - tl.corners[1] + borderWidth,
         0
       ) +
-      L(tl.width, tl.roundness + borderWidth) +
-      A(tl.roundness + borderWidth, tl.width + tl.roundness + borderWidth, 0);
+      V(tl.corners[2] + borderWidth) +
+      A(tl.corners[2] + borderWidth, tl.width + tl.corners[2] + borderWidth, 0);
   } else path += A(topLeft + borderWidth, topLeft + borderWidth, 0) + "Z";
 
   return path;
@@ -270,4 +295,14 @@ export function debounce(func: Function, wait: number) {
   };
   debounced.cancel = () => clearTimeout(timeout);
   return debounced;
+}
+
+export function areAllEqual(arr: number[]): boolean {
+  return arr.every((val) => val === arr[0]);
+}
+
+export function getCorners(rList: number[]): [number, number, number] {
+  if (rList.length === 1) return [rList[0], rList[0], rList[0]];
+  if (rList.length === 2) return [rList[0], rList[1], 0];
+  return rList as [number, number, number];
 }
