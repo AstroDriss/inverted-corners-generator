@@ -18,6 +18,7 @@ const Handlers = ({
   borderWidth,
 }: Props) => {
   const activeHandler = useRef<number>(null);
+  const [visibleHandler, setVisibleHandler] = useState<number | null>(null); // https://stackoverflow.com/questions/62806541/how-to-solve-the-react-hook-closure-issue
   const circlesRef = useRef<SVGGElement>(null);
   const svgRef = useRef<SVGElement>(null);
 
@@ -50,7 +51,9 @@ const Handlers = ({
         if (!e.target) return;
         document.body.classList.add("grabbing");
         const circle = e.target as SVGCircleElement;
-        activeHandler.current = +circle.getAttribute("data-index")!;
+        const index = +circle.getAttribute("data-index")!;
+        activeHandler.current = index;
+        setVisibleHandler(index);
       },
       { signal: controller.signal }
     );
@@ -101,8 +104,10 @@ const Handlers = ({
       "pointerup",
       (e) => {
         svgRef.current?.releasePointerCapture(e.pointerId);
-        activeHandler.current = null;
         document.body.classList.remove("grabbing");
+
+        activeHandler.current = null;
+        setVisibleHandler(null);
       },
       { signal: controller.signal }
     );
@@ -125,7 +130,7 @@ const Handlers = ({
         strokeLinecap="round"
       >
         <path
-          className={`${activeHandler.current !== 0 ? "hidden" : ""}`}
+          className={`${visibleHandler !== 0 ? "hidden" : ""}`}
           d={`M${borderWidth} ${cornerRadius.tl + borderWidth} A${
             cornerRadius.tl
           } ${cornerRadius.tl} 0 0 1 ${
@@ -134,7 +139,7 @@ const Handlers = ({
         />
 
         <path
-          className={`${activeHandler.current !== 1 ? "hidden" : ""}`}
+          className={`${visibleHandler !== 1 ? "hidden" : ""}`}
           d={`M${setup.width + borderWidth - cornerRadius.tr} ${borderWidth} A${
             cornerRadius.tr
           } ${cornerRadius.tr} 0 0 1 ${setup.width + borderWidth} ${
@@ -143,7 +148,7 @@ const Handlers = ({
         />
 
         <path
-          className={`${activeHandler.current !== 2 ? "hidden" : ""}`}
+          className={`${visibleHandler !== 2 ? "hidden" : ""}`}
           d={`M${setup.width + borderWidth - cornerRadius.br} ${
             borderWidth + setup.height
           } A${cornerRadius.br} ${cornerRadius.br} 0 0 0 ${
@@ -152,7 +157,7 @@ const Handlers = ({
         />
 
         <path
-          className={`${activeHandler.current !== 3 ? "hidden" : ""}`}
+          className={`${visibleHandler !== 3 ? "hidden" : ""}`}
           d={`M${borderWidth + cornerRadius.bl} ${
             borderWidth + setup.height
           } A${cornerRadius.bl} ${cornerRadius.bl} 0 0 1 ${borderWidth} ${
