@@ -20,12 +20,12 @@ This tool relies on properties like the width, height and radius of each inverte
 
 Here's a visual overview:
 
-![Diagram: How corner inverter works](./public//corner-inverter-diagram.png)
+![Diagram: How corner inverter works](./public/corner-inverter-diagram.png)
 
 The resulting SVG path might look like this:
 
 ```xml
-<path d="M10,0H30A10,10 0,0,1 40,10L40,20A10,10 0,0,0 50,30L90,30A10,10 0,0 1 100,40V90A10,10 0,0,1 90,100H30A10,10 0,0,1 20,90L20,90A10,10 0,0,0 10,80L10,80A10,10 0,0,1 0,70V10A10,10 0,0,1 10,0Z" />
+<path d="M20,0H30A10,10 0,0,1 40,10V20A10,10 0,0,0 50,30H90A10,10 0,0,1 100,40V90A10,10 0,0,1 90,100H30A10,10 0,0,1 20,90V90A10,10 0,0,0 10,80H10A10,10 0,0,1 0,70V20A20,20 0,0,1 20,0Z" />
 ```
 
 This path uses a limited set of SVG commands to build the shape:
@@ -35,7 +35,6 @@ This path uses a limited set of SVG commands to build the shape:
 | M       | Move to a starting point    |
 | H       | Draw Horizontal Line        |
 | V       | Draw vertical Line          |
-| L       | Draw Line to a point        |
 | A       | Draw arc for curved corners |
 | Z       | Close the path              |
 
@@ -43,5 +42,5 @@ This path uses a limited set of SVG commands to build the shape:
 
 ## CSS Limitations
 
-- for CSS clip-path the result is not responsive and the shape must be at the exact dimensions, this is because the `path()` function does't accept percentage values.
+- Using `path()` inside a clip-path isn't responsive. Since it doesn't accept relative values, you're stuck with exact dimensions.
 - With the `mask` property it will work fine as long as the aspect ratio of your element matches the aspect ratio specified in the tool. to make sure your element's aspect ratio stays the same in CSS use the `aspect-ratio` property.
