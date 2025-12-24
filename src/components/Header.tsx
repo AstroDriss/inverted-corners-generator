@@ -1,7 +1,8 @@
-import { CiExport } from "react-icons/ci";
+import { CiExport, CiStar } from "react-icons/ci";
 import ExportModal from "./ExportModal";
 import { useState } from "react";
 import { BsGithub } from "react-icons/bs";
+import useGitHubStars from "../hooks/useGithubStars";
 
 interface Props {
   pathConfig: {
@@ -16,6 +17,7 @@ interface Props {
 
 const Header = ({ pathConfig }: Props) => {
   const [showModal, setShowModal] = useState(false);
+  const starCount = useGitHubStars("AstroDriss", "inverted-corners-generator");
 
   return (
     <>
@@ -29,7 +31,14 @@ const Header = ({ pathConfig }: Props) => {
             title="Corner Inverter on github"
             aria-label="Visit this project at github"
             target="_blank"
+            className="flex items-center border border-coffee p-1 rounded-full hover:bg-white/25"
           >
+            {starCount && (
+              <>
+                <CiStar />
+                <span className="ms-1 me-3">{starCount}</span>
+              </>
+            )}
             <BsGithub size={25} />
           </a>
           <button

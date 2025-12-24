@@ -118,7 +118,12 @@ const Handlers = ({
 
   return (
     <>
-      <g stroke="dodgerblue" fill="none" strokeWidth=".5%">
+      <g
+        stroke="dodgerblue"
+        fill="none"
+        strokeWidth=".5%"
+        strokeLinecap="round"
+      >
         <path
           className={`${activeHandler.current !== 0 ? "hidden" : ""}`}
           d={`M${borderWidth} ${cornerRadius.tl + borderWidth} A${
@@ -206,23 +211,28 @@ export const CornerInvertedHandler = ({
   setInvertedCorners: React.Dispatch<React.SetStateAction<InvertedCorners>>;
 }) => {
   const [box, setBox] = useState<null | DOMRect>(null);
+  const elementRef = useRef<null | SVGRectElement>(null);
 
   const updateBoundingBox = () => {
-    const element = document.querySelector(
-      "svg#preview .inner-path"
-    ) as SVGRectElement;
+    if (!elementRef.current)
+      elementRef.current = document.querySelector(
+        "svg#preview .inner-path"
+      ) as SVGRectElement;
 
-    if (!element) return;
-    setBox(element.getBoundingClientRect());
+    if (!elementRef.current) return;
+    setBox(elementRef.current.getBoundingClientRect());
   };
 
   useEffect(() => {
     const dUpdateBoundingBox = debounce(updateBoundingBox, 50);
     const id = setTimeout(updateBoundingBox, 0);
+    updateBoundingBox();
     addEventListener("resize", dUpdateBoundingBox);
+    addEventListener("scroll", dUpdateBoundingBox);
     return () => {
       clearTimeout(id);
       removeEventListener("resize", dUpdateBoundingBox);
+      removeEventListener("scroll", dUpdateBoundingBox);
     };
   }, [setup, pathRef.current]);
 
@@ -233,7 +243,10 @@ export const CornerInvertedHandler = ({
   return (
     <div className="hidden md:contents">
       <button
-        style={{ left: box.left + "px", top: box.top - cellSize + "px" }}
+        style={{
+          left: box.left + "px",
+          top: box.top - cellSize + scrollY + "px",
+        }}
         className={`absolute p-1 rounded-full border border-coffee ${
           invertedCorners.tl.inverted
             ? "bg-coffee text-bg"
@@ -252,7 +265,7 @@ export const CornerInvertedHandler = ({
       <button
         style={{
           left: box.left + box.width - cellSize / 2 + "px",
-          top: box.top - cellSize + "px",
+          top: box.top - cellSize + scrollY + "px",
         }}
         className={`absolute p-1 rounded-full border border-coffee ${
           invertedCorners.tr.inverted
@@ -272,7 +285,7 @@ export const CornerInvertedHandler = ({
       <button
         style={{
           left: box.left + box.width - cellSize / 2 + "px",
-          top: box.top + box.height + cellSize / 2 + "px",
+          top: box.top + box.height + cellSize / 2 + scrollY + "px",
         }}
         className={`absolute p-1 rounded-full border border-coffee ${
           invertedCorners.br.inverted
@@ -292,7 +305,7 @@ export const CornerInvertedHandler = ({
       <button
         style={{
           left: box.left + "px",
-          top: box.top + box.height + cellSize / 2 + "px",
+          top: box.top + box.height + cellSize / 2 + scrollY + "px",
         }}
         className={`absolute p-1 rounded-full border border-coffee ${
           invertedCorners.bl.inverted
