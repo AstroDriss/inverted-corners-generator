@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { constraint, debounce } from "../utils";
 import InvertedTopRightCorner from "../assets/InvertedTopRightCorner";
 
@@ -8,66 +8,103 @@ interface Props {
   setup: Setup;
   invertedCorners: InvertedCorners;
   borderWidth: number;
+  svgRef: React.RefObject<SVGElement | null>; // Passed from parent
 }
 
-const Handlers = ({
+const GRAB_CLASS = "grab";
+const GRABBING_CLASS = "grabbing";
+
+const CornerPath = ({
+  visibleHandle,
+  index,
+  d,
+}: {
+  visibleHandle: number | null;
+  index: number;
+  d: string;
+}) => <path className={`${visibleHandle !== index ? "hidden" : ""}`} d={d} />;
+
+const Handles = ({
   cornerRadius,
   setCornerRadius,
   setup,
   invertedCorners,
   borderWidth,
+  svgRef,
 }: Props) => {
-  const activeHandler = useRef<number>(null);
-  const [visibleHandler, setVisibleHandler] = useState<number | null>(null); // https://stackoverflow.com/questions/62806541/how-to-solve-the-react-hook-closure-issue
+  const activeHandle = useRef<number>(null);
+  const [visibleHandle, setVisibleHandle] = useState<number | null>(null); // https://stackoverflow.com/questions/62806541/how-to-solve-the-react-hook-closure-issue
   const circlesRef = useRef<SVGGElement>(null);
-  const svgRef = useRef<SVGElement>(null);
+
+  const handlePointerOver = useCallback(() => {
+    document.body.classList.add(GRAB_CLASS);
+  }, []);
+
+  const handlePointerOut = useCallback((e: PointerEvent) => {
+    document.body.classList.remove(GRAB_CLASS);
+
+    if ((e.target as SVGCircleElement).hasPointerCapture(e.pointerId)) {
+      (e.target as SVGCircleElement).releasePointerCapture(e.pointerId);
+    }
+  }, []);
+
+  const handlePointerDown = useCallback(
+    (e: PointerEvent) => {
+      e.preventDefault();
+      (e.target as SVGCircleElement).setPointerCapture(e.pointerId);
+      if (!e.target) return;
+      document.body.classList.add(GRABBING_CLASS);
+      const circle = e.target as SVGCircleElement;
+      const index = +circle.getAttribute("data-index")!;
+      activeHandle.current = index;
+      setVisibleHandle(index);
+    },
+    [svgRef],
+  );
+
+  const handlePointerUp = useCallback(
+    (e: PointerEvent) => {
+      svgRef.current?.releasePointerCapture(e.pointerId);
+      document.body.classList.remove(GRABBING_CLASS);
+      activeHandle.current = null;
+      setVisibleHandle(null);
+    },
+    [svgRef],
+  );
+
+  const handlePointerCancel = useCallback(
+    (e: PointerEvent) => {
+      if ((e.target as SVGCircleElement).hasPointerCapture(e.pointerId)) {
+        (e.target as SVGCircleElement).releasePointerCapture(e.pointerId);
+      }
+    },
+    [svgRef],
+  );
 
   useEffect(() => {
-    svgRef.current = document.querySelector("svg#preview");
     if (!circlesRef.current) return;
     const controller = new AbortController();
 
-    circlesRef.current.addEventListener(
-      "pointerover",
-      () => {
-        document.body.classList.add("grab");
-      },
-      { signal: controller.signal }
-    );
-
-    circlesRef.current.addEventListener(
-      "pointerout",
-      () => {
-        document.body.classList.remove("grab");
-      },
-      { signal: controller.signal }
-    );
-
-    circlesRef.current.addEventListener(
-      "pointerdown",
-      (e) => {
-        e.preventDefault();
-        svgRef.current?.setPointerCapture(e.pointerId);
-        if (!e.target) return;
-        document.body.classList.add("grabbing");
-        const circle = e.target as SVGCircleElement;
-        const index = +circle.getAttribute("data-index")!;
-        activeHandler.current = index;
-        setVisibleHandler(index);
-      },
-      { signal: controller.signal }
-    );
+    circlesRef.current.addEventListener("pointerover", handlePointerOver, {
+      signal: controller.signal,
+    });
+    circlesRef.current.addEventListener("pointerout", handlePointerOut, {
+      signal: controller.signal,
+    });
+    circlesRef.current.addEventListener("pointerdown", handlePointerDown, {
+      signal: controller.signal,
+    });
 
     document.addEventListener(
       "pointermove",
       (e) => {
-        if (activeHandler.current === null || svgRef.current === null) return;
+        if (activeHandle.current === null || svgRef.current === null) return;
 
         const box = svgRef.current.getBoundingClientRect();
         const x = ((e.clientX - box.left) * setup.width) / box.width; // Get relative x and Scale it
         const y = ((e.clientY - box.top) * setup.height) / box.height;
 
-        switch (activeHandler.current) {
+        switch (activeHandle.current) {
           case 0: // Top Left
             setCornerRadius((prev) => ({
               ...prev,
@@ -85,7 +122,7 @@ const Handlers = ({
               ...prev,
               br: constraint(
                 setup,
-                Math.min(setup.width - x, setup.height - y)
+                Math.min(setup.width - x, setup.height - y),
               ),
             }));
             break;
@@ -97,29 +134,19 @@ const Handlers = ({
             break;
         }
       },
-      { signal: controller.signal }
+      { signal: controller.signal },
     );
-
-    document.addEventListener(
-      "pointerup",
-      (e) => {
-        svgRef.current?.releasePointerCapture(e.pointerId);
-        document.body.classList.remove("grabbing");
-
-        activeHandler.current = null;
-        setVisibleHandler(null);
-      },
-      { signal: controller.signal }
-    );
-
-    document.addEventListener(
-      "pointercancel",
-      (e) => svgRef.current?.releasePointerCapture(e.pointerId),
-      { signal: controller.signal }
-    );
+    document.addEventListener("pointerup", handlePointerUp, {
+      signal: controller.signal,
+    });
+    document.addEventListener("pointercancel", handlePointerCancel, {
+      signal: controller.signal,
+    });
 
     return () => controller.abort();
-  }, [setup]);
+  }, [setup, svgRef]);
+
+  const { tl, tr, br, bl } = cornerRadius;
 
   return (
     <>
@@ -129,46 +156,41 @@ const Handlers = ({
         strokeWidth=".5%"
         strokeLinecap="round"
       >
-        <path
-          className={`${visibleHandler !== 0 ? "hidden" : ""}`}
-          d={`M${borderWidth} ${cornerRadius.tl + borderWidth} A${
-            cornerRadius.tl
-          } ${cornerRadius.tl} 0 0 1 ${
-            cornerRadius.tl + borderWidth
+        <CornerPath
+          visibleHandle={visibleHandle}
+          index={0}
+          d={`M${borderWidth} ${tl + borderWidth} A${tl} ${tl} 0 0 1 ${
+            tl + borderWidth
           } ${borderWidth}`}
         />
-
-        <path
-          className={`${visibleHandler !== 1 ? "hidden" : ""}`}
-          d={`M${setup.width + borderWidth - cornerRadius.tr} ${borderWidth} A${
-            cornerRadius.tr
-          } ${cornerRadius.tr} 0 0 1 ${setup.width + borderWidth} ${
-            cornerRadius.tr + borderWidth
-          }`}
-        />
-
-        <path
-          className={`${visibleHandler !== 2 ? "hidden" : ""}`}
-          d={`M${setup.width + borderWidth - cornerRadius.br} ${
-            borderWidth + setup.height
-          } A${cornerRadius.br} ${cornerRadius.br} 0 0 0 ${
+        <CornerPath
+          visibleHandle={visibleHandle}
+          index={1}
+          d={`M${setup.width + borderWidth - tr} ${borderWidth} A${tr} ${tr} 0 0 1 ${
             setup.width + borderWidth
-          } ${setup.height - cornerRadius.br + borderWidth}`}
+          } ${tr + borderWidth}`}
         />
-
-        <path
-          className={`${visibleHandler !== 3 ? "hidden" : ""}`}
-          d={`M${borderWidth + cornerRadius.bl} ${
+        <CornerPath
+          visibleHandle={visibleHandle}
+          index={2}
+          d={`M${setup.width + borderWidth - br} ${
             borderWidth + setup.height
-          } A${cornerRadius.bl} ${cornerRadius.bl} 0 0 1 ${borderWidth} ${
-            setup.height + borderWidth - cornerRadius.bl
+          } A${br} ${br} 0 0 0 ${setup.width + borderWidth} ${
+            setup.height - br + borderWidth
           }`}
+        />
+        <CornerPath
+          visibleHandle={visibleHandle}
+          index={3}
+          d={`M${borderWidth + bl} ${borderWidth + setup.height} A${bl} ${bl} 0 0 1 ${
+            borderWidth
+          } ${setup.height + borderWidth - bl}`}
         />
       </g>
 
       <g
         ref={circlesRef}
-        className={`fill-coffee stroke-gray-300 handlers`}
+        className={`fill-coffee stroke-gray-300 handles`}
         strokeWidth=".3%"
       >
         {!invertedCorners.tl.inverted && (
@@ -204,7 +226,7 @@ const Handlers = ({
   );
 };
 
-export const CornerInvertedHandler = ({
+export const CornerInvertedHandles = ({
   pathRef,
   setup,
   invertedCorners,
@@ -221,7 +243,7 @@ export const CornerInvertedHandler = ({
   const updateBoundingBox = () => {
     if (!elementRef.current)
       elementRef.current = document.querySelector(
-        "svg#preview .inner-path"
+        "svg#preview .inner-path",
       ) as SVGRectElement;
 
     if (!elementRef.current) return;
@@ -330,4 +352,4 @@ export const CornerInvertedHandler = ({
   );
 };
 
-export default Handlers;
+export default Handles;

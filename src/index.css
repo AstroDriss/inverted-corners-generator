@@ -23,7 +23,7 @@
   svg {
     touch-action: none;
   }
-  .handlers circle {
+  .handles circle {
     r: 1%;
   }
   .grab {
@@ -66,7 +66,9 @@
     background-color: #eceff1;
     box-shadow: 0 0 1px #444a;
 
-    transition: transform 300ms, box-shadow 150ms ease-in-out;
+    transition:
+      transform 300ms,
+      box-shadow 150ms ease-in-out;
   }
   [role="switch"]:checked {
     background-color: var(--color-frappe);

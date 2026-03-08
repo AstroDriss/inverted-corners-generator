@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import Header from "./components/Header.tsx";
 import Controllers from "./components/Controllers.tsx";
-import Handlers, { CornerInvertedHandler } from "./components/Handlers.tsx";
+import Handles, { CornerInvertedHandles } from "./components/Handles.tsx";
 import { generateBorderPath, generatePath } from "./utils/index.ts";
 import {
   DEFAULT_BACKGROUND_COLOR,
@@ -19,16 +19,17 @@ function App() {
   const [setup, setSetup] = useState(DEFAULT_SETUP);
   const [cornerRadius, setCornerRadius] = useState(DEFAULT_CORNER_RADIUS);
   const [invertedCorners, setInvertedCorners] = useState(
-    DEFAULT_INVERTED_CORNERS
+    DEFAULT_INVERTED_CORNERS,
   );
   const [borderWidth, setBorderWidth] = useState(DEFAULT_BORDER_WIDTH);
   const [borderColor, setBorderColor] = useState(DEFAULT_BORDER_COLOR);
   const [backgroundColor, setBackgroundColor] = useState(
-    DEFAULT_BACKGROUND_COLOR
+    DEFAULT_BACKGROUND_COLOR,
   );
   const [pathCode, setPathCode] = useState("");
   const [outerPathCode, setOuterPathCode] = useState("");
 
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const pathRef = useRef(null);
   const outerPathRef = useRef(null);
 
@@ -44,10 +45,10 @@ function App() {
       generatePath(setup, cornerRadius, invertedCorners, {
         x: borderWidth,
         y: borderWidth,
-      })
+      }),
     );
     setOuterPathCode(
-      generateBorderPath(setup, cornerRadius, invertedCorners, borderWidth)
+      generateBorderPath(setup, cornerRadius, invertedCorners, borderWidth),
     );
   }, [setup, cornerRadius, invertedCorners, borderWidth]);
 
@@ -73,6 +74,7 @@ function App() {
               setup.height + borderWidth * 2
             }`}
             id="preview"
+            ref={svgRef}
             xmlns="http://www.w3.org/2000/svg"
             className="max-h-[70vh] overflow-visible"
           >
@@ -108,16 +110,17 @@ function App() {
               fill={backgroundColor}
             />
 
-            <Handlers
+            <Handles
               cornerRadius={cornerRadius}
               setCornerRadius={setCornerRadius}
               invertedCorners={invertedCorners}
               setup={setup}
               borderWidth={borderWidth}
+              svgRef={svgRef}
             />
           </svg>
         </div>
-        <CornerInvertedHandler
+        <CornerInvertedHandles
           setup={setup}
           pathRef={pathRef}
           invertedCorners={invertedCorners}

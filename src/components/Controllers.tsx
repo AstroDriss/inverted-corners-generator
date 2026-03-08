@@ -45,7 +45,7 @@ const Controllers = ({
   setBackgroundColor,
 }: Props) => {
   const [aspectRatio, setAspectRatio] = useState(
-    gcd(setup.width, setup.height)
+    gcd(setup.width, setup.height),
   );
   const dimensionsFormRef = useRef<HTMLFormElement>(null);
   const cornerRadiusFormRef = useRef(null);
@@ -76,7 +76,7 @@ const Controllers = ({
 
         (
           dimensionsFormRef.current.querySelector(
-            "[name='height']"
+            "[name='height']",
           )! as HTMLInputElement
         ).value = String(height);
       } else if (height !== setup.height) {
@@ -84,19 +84,19 @@ const Controllers = ({
 
         (
           dimensionsFormRef.current.querySelector(
-            "[name='width']"
+            "[name='width']",
           )! as HTMLInputElement
         ).value = String(width);
       }
     } else {
       (
         dimensionsFormRef.current.querySelector(
-          "[name='width']"
+          "[name='width']",
         ) as HTMLInputElement
       ).value = String(width);
       (
         dimensionsFormRef.current.querySelector(
-          "[name='height']"
+          "[name='height']",
         ) as HTMLInputElement
       ).value = String(height);
     }
@@ -128,7 +128,7 @@ const Controllers = ({
   };
 
   const updateSpecificCornerRadius = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     setCornerRadius((prev) => ({
       ...prev,
@@ -146,7 +146,7 @@ const Controllers = ({
 
   const updateInvertedCorners = (
     corner: keyof typeof invertedCorners,
-    newValues: Partial<typeof invertedCorners.tl>
+    newValues: Partial<typeof invertedCorners.tl>,
   ) => {
     setInvertedCorners((prev) => {
       const { width, height } = setup;
@@ -195,18 +195,18 @@ const Controllers = ({
               maxWidth[corner],
               Math.max(
                 prev[corner].corners[0] * 2,
-                newValues.width ?? prev[corner].width
-              )
-            )
+                newValues.width ?? prev[corner].width,
+              ),
+            ),
           ),
           height: fixed(
             Math.min(
               maxHeight[corner],
               Math.max(
                 prev[corner].corners[2] * 2,
-                newValues.height ?? prev[corner].height
-              )
-            )
+                newValues.height ?? prev[corner].height,
+              ),
+            ),
           ),
           inverted: newValues.inverted ?? prev[corner].inverted,
           corners: newValues.corners ?? prev[corner].corners,
@@ -218,13 +218,13 @@ const Controllers = ({
   const updateInvertedCornerRadius = (
     cornerKey: keyof typeof invertedCorners,
     index: number,
-    value: number
+    value: number,
   ) => {
     const current = invertedCorners[cornerKey].corners;
     const updated: [number, number, number] = [...current] as [
       number,
       number,
-      number
+      number,
     ];
     updated[index] = value;
 
@@ -383,7 +383,7 @@ const Controllers = ({
                     value={cornerRadius[corner]}
                   />
                 );
-              }
+              },
             )}
           </div>
         </form>
