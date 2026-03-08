@@ -35,7 +35,7 @@
 }
 
 @media screen and (max-width: 500px) {
-  .handlers circle {
+  .handles circle {
     r: 2%;
   }
 }
