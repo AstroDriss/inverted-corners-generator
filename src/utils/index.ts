@@ -19,7 +19,7 @@ function drawInvertedCorner(
     corners,
   }: { width: number; height: number; corners: number[] },
   origin: { x: number; y: number },
-  direction: "tr" | "br" | "bl" | "tl"
+  direction: "tr" | "br" | "bl" | "tl",
 ) {
   const [c0, c1, c2] = corners;
   const { x, y } = origin;
@@ -67,7 +67,7 @@ export const generatePath = (
   setup: Setup,
   cornerRadius: CornerRadius,
   invertedCorners: InvertedCorners,
-  position = { x: 0, y: 0 }
+  position = { x: 0, y: 0 },
 ) => {
   const { width, height } = setup;
   const {
@@ -101,7 +101,7 @@ export const generatePath = (
     path += drawInvertedCorner(
       br,
       { x: x + width, y: y + height - br.height },
-      "br"
+      "br",
     );
   } else path += A(bottomRight, x + width - bottomRight, y + height);
 
@@ -128,7 +128,7 @@ export const generateBorderPath = (
   setup: Setup,
   cornerRadius: CornerRadius,
   invertedCorners: InvertedCorners,
-  borderWidth: number
+  borderWidth: number,
 ) => {
   const { width, height } = setup;
   const {
@@ -156,26 +156,26 @@ export const generateBorderPath = (
       A(
         tr.corners[0] + borderWidth,
         outerWidth - tr.width + borderWidth,
-        tr.corners[0] + borderWidth
+        tr.corners[0] + borderWidth,
       ) +
       V(tr.height - tr.corners[1] + borderWidth) +
       A(
         tr.corners[1] - borderWidth,
         outerWidth - tr.width + tr.corners[1],
         tr.height,
-        0
+        0,
       ) +
       H(outerWidth - tr.corners[2]) +
       A(
         tr.corners[2] + borderWidth,
         outerWidth + borderWidth,
-        tr.height + tr.corners[2] + borderWidth
+        tr.height + tr.corners[2] + borderWidth,
       );
   } else
     path += A(
       topRight + borderWidth,
       outerWidth + borderWidth,
-      topRight + borderWidth
+      topRight + borderWidth,
     );
 
   // Right Side
@@ -189,26 +189,26 @@ export const generateBorderPath = (
       A(
         br.corners[0] + borderWidth,
         outerWidth - br.corners[0],
-        outerHeight - br.height + borderWidth
+        outerHeight - br.height + borderWidth,
       ) +
       H(outerWidth - br.width + br.corners[1]) +
       A(
         br.corners[1] - borderWidth,
         outerWidth - br.width + borderWidth,
         outerHeight - br.height + br.corners[1],
-        0
+        0,
       ) +
       V(outerHeight - br.corners[2]) +
       A(
         br.corners[2] + borderWidth,
         outerWidth - br.width - br.corners[2],
-        outerHeight + borderWidth
+        outerHeight + borderWidth,
       );
   } else
     path += A(
       bottomRight + borderWidth,
       outerWidth - bottomRight,
-      outerHeight + borderWidth
+      outerHeight + borderWidth,
     );
 
   // Bottom Side
@@ -224,13 +224,13 @@ export const generateBorderPath = (
         bl.corners[1] - borderWidth,
         bl.width - bl.corners[1] + borderWidth,
         outerHeight - bl.height + borderWidth,
-        0
+        0,
       ) +
       H(bl.corners[2] + borderWidth) +
       A(
         bl.corners[2] + borderWidth,
         0,
-        outerHeight - bl.height - bl.corners[2]
+        outerHeight - bl.height - bl.corners[2],
       );
   } else path += A(bottomLeft + borderWidth, 0, outerHeight - bottomLeft);
 
@@ -247,7 +247,7 @@ export const generateBorderPath = (
         tl.corners[1] - borderWidth,
         tl.width,
         tl.height - tl.corners[1] + borderWidth,
-        0
+        0,
       ) +
       V(tl.corners[2] + borderWidth) +
       A(tl.corners[2] + borderWidth, tl.width + tl.corners[2] + borderWidth, 0);
@@ -306,3 +306,58 @@ export function getCorners(rList: number[]): [number, number, number] {
   if (rList.length === 2) return [rList[0], rList[1], 0];
   return rList as [number, number, number];
 }
+
+export const convertPathToResponsiveShape = (
+  pathData: string,
+  width: number,
+  height: number,
+): string => {
+  const toX = (val: number) => Number(((val / width) * 100).toFixed(2)) + "%";
+  const toY = (val: number) => Number(((val / height) * 100).toFixed(2)) + "%";
+
+  const commands = pathData.match(/[a-zA-Z][^a-zA-Z]*/g);
+  if (!commands) return "";
+
+  const shapeCommands = commands.map((segment) => {
+    const type = segment[0].toUpperCase();
+
+    const args =
+      segment
+        .substring(1)
+        .match(/-?\d*\.?\d+/g)
+        ?.map(Number) || [];
+
+    switch (type) {
+      case "M":
+        return `from ${toX(args[0])} ${toY(args[1])}`;
+
+      case "L":
+        return `line to ${toX(args[0])} ${toY(args[1])}`;
+
+      case "H":
+        return `hline to ${toX(args[0])}`;
+
+      case "V":
+        return `vline to ${toY(args[0])}`;
+
+      case "A":
+        const rx = toX(args[0]);
+        const ry = toY(args[1]);
+        const angle = args[2];
+        const size = args[3] === 1 ? "large" : "small";
+        const sweep = args[4] === 1 ? "cw" : "ccw";
+        const x = toX(args[5]);
+        const y = toY(args[6]);
+
+        return `arc to ${x} ${y} of ${rx} ${ry} ${sweep} ${size} rotate ${angle}deg`;
+
+      case "Z":
+        return `close`;
+
+      default:
+        return "";
+    }
+  });
+
+  return shapeCommands.filter(Boolean).join(",");
+};

@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { BsDownload } from "react-icons/bs";
 import { IoClose } from "react-icons/io5";
 import { MdLink, MdOutlineContentCopy } from "react-icons/md";
+import { FiAlertTriangle } from "react-icons/fi";
 import { ToastContainer, toast } from "react-toastify";
 import {
+  convertPathToResponsiveShape,
   gcd,
   generateBorderPath,
   generatePath,
@@ -41,6 +43,7 @@ const ExportModal = ({ pathConfig, setShowModal }: Props) => {
 
   const [maskCode, setMaskCode] = useState("");
   const [clipPathCode, setClipPathCode] = useState("");
+  const [clipPathShapeCode, setClipPathShapeCode] = useState("");
 
   const getCSSAspectRatio = () => {
     const cd = gcd(setup.width, setup.height);
@@ -61,7 +64,7 @@ const ExportModal = ({ pathConfig, setShowModal }: Props) => {
       setup,
       cornerRadius,
       invertedCorners,
-      borderWidth
+      borderWidth,
     );
 
     svgCode.current = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${
@@ -90,7 +93,7 @@ const ExportModal = ({ pathConfig, setShowModal }: Props) => {
 \tbox-sizing: border-box;`
           : ""
       }
-}`
+}`,
     );
 
     setClipPathCode(
@@ -110,14 +113,38 @@ const ExportModal = ({ pathConfig, setShowModal }: Props) => {
 \tbox-sizing: border-box;`
           : ""
       }
-}`
+}`,
+    );
+
+    setClipPathShapeCode(
+      `.inverted {
+\tclip-path: shape(${convertPathToResponsiveShape(
+        outerPath.current,
+        setup.width + borderWidth * 2,
+        setup.height + borderWidth * 2,
+      )});
+\twidth: ${setup.width + borderWidth * 2}px;
+\theight: ${setup.height + borderWidth * 2}px;
+\tbackground-color: ${
+        borderWidth > 0
+          ? `${borderColor}; /* border-color */`
+          : backgroundColor + ";"
+      }
+\taspect-ratio: ${getCSSAspectRatio()};${
+        borderWidth > 0
+          ? `
+\tbackground-image: ${getInnerPathImage()};
+\tbox-sizing: border-box;`
+          : ""
+      }
+}`,
     );
   }, [pathConfig]);
 
   const downloadSVG = () => {
     const blob = new Blob(
       [`<?xml version="1.0" encoding="UTF-8"?>${svgCode.current}`],
-      { type: "image/svg+xml" }
+      { type: "image/svg+xml" },
     );
     const url = URL.createObjectURL(blob);
 
@@ -140,7 +167,7 @@ const ExportModal = ({ pathConfig, setShowModal }: Props) => {
         setup.width + borderWidth * 2
       } ${setup.height + borderWidth * 2}"><path d="${
         innerPath.current
-      }" fill="${backgroundColor}" /></svg>`
+      }" fill="${backgroundColor}" /></svg>`,
     );
     return `url('data:image/svg+xml,${encodedSVG}')`;
   };
@@ -151,7 +178,7 @@ const ExportModal = ({ pathConfig, setShowModal }: Props) => {
         setup.width + borderWidth * 2
       } ${setup.height + borderWidth * 2}"><path d="${
         outerPath.current
-      }" fill="#fff" /></svg>`
+      }" fill="#fff" /></svg>`,
     );
     return `-webkit-mask: url('data:image/svg+xml,${encodedSVG}') no-repeat center / contain;
     \tmask: url('data:image/svg+xml,${encodedSVG}') no-repeat center / contain;`;
@@ -163,7 +190,7 @@ const ExportModal = ({ pathConfig, setShowModal }: Props) => {
   <path d="${normalizeSVGPath(
     outerPath.current,
     setup.width + borderWidth * 2,
-    setup.height + borderWidth * 2
+    setup.height + borderWidth * 2,
   )}"/>
   </clipPath></defs>
 </svg>`;
@@ -196,13 +223,13 @@ const ExportModal = ({ pathConfig, setShowModal }: Props) => {
 
     const { tl, tr, br, bl } = invertedCorners;
     const ic = `ic=${tl.width}x${tl.height}x${getCorners(tl.corners)}:${Number(
-      tl.inverted
+      tl.inverted,
     )},${tr.width}x${tr.height}x${getCorners(tr.corners)}:${Number(
-      tr.inverted
+      tr.inverted,
     )},${br.width}x${br.height}x${getCorners(br.corners)}:${Number(
-      br.inverted
+      br.inverted,
     )},${bl.width}x${bl.height}x${getCorners(bl.corners)}:${Number(
-      bl.inverted
+      bl.inverted,
     )}`;
 
     const tracking =
@@ -212,7 +239,7 @@ const ExportModal = ({ pathConfig, setShowModal }: Props) => {
       setup.height
     }&b=${borderWidth}&${r}&${ic}&bc=${borderColor.replace(
       "#",
-      ""
+      "",
     )}&bg=${backgroundColor.replace("#", "")}&${tracking}`;
     const url = location.origin + location.pathname + searchParam;
 
@@ -273,6 +300,17 @@ const ExportModal = ({ pathConfig, setShowModal }: Props) => {
               />
               clip-path
             </label>
+            <label className="has-focus-within:ring cursor-pointer text-coffee rounded-full px-3 py-1 has-checked:bg-coffee has-checked:text-bg">
+              <input
+                checked={outputType === "shape"}
+                name="output-type"
+                className="sr-only"
+                type="radio"
+                data-type="clip-path"
+                onChange={() => setOutputType("shape")}
+              />
+              shape()
+            </label>
           </form>
 
           {outputType === "clipPath" && (
@@ -297,6 +335,22 @@ const ExportModal = ({ pathConfig, setShowModal }: Props) => {
           {outputType === "clip-path" && (
             <>
               <CodeBlock code={clipPathCode} lang="css" />
+              <CodeBlock code='<div class="inverted"></div>' lang="html" />
+            </>
+          )}
+
+          {outputType === "shape" && (
+            <>
+              <p className="flex items-center gap-2 text-sm text-coffee bg-frappe/10 border border-frappe px-3 py-2 rounded-md">
+                <span className="text-base text-frappe leading-none">
+                  <FiAlertTriangle />
+                </span>
+                <span>
+                  <strong>Note:</strong> The CSS <code>shape()</code> function
+                  may have limited support in older browsers.
+                </span>
+              </p>
+              <CodeBlock code={clipPathShapeCode} lang="css" />
               <CodeBlock code='<div class="inverted"></div>' lang="html" />
             </>
           )}
