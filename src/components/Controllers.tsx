@@ -149,67 +149,102 @@ const Controllers = ({
     newValues: Partial<typeof invertedCorners.tl>,
   ) => {
     setInvertedCorners((prev) => {
-      const { width, height } = setup;
+      const raw = { ...prev[corner], ...newValues };
 
-      const { tl, tr, bl, br } = prev;
+      // 1. Map which corner index extends into the external Horizontal or Vertical edges.
+      // TL/BR: c2 is horizontal, c0 is vertical. TR/BL: c0 is horizontal, c2 is vertical.
+      const getExternalIndices = (c: keyof typeof prev) => ({
+        extH: c === "tl" || c === "br" ? 2 : 0,
+        extV: c === "tl" || c === "br" ? 0 : 2,
+      });
 
-      const { tl: radTL, tr: radTR, bl: radBL, br: radBR } = cornerRadius;
-
-      const maxWidth = {
-        tl: tr.inverted
-          ? width - tr.corners[0] - tl.corners[2] - tr.width
-          : width - radTR - tl.corners[2],
-
-        tr: tl.inverted
-          ? width - tr.corners[0] - tl.corners[2] - tl.width
-          : width - radTL - tr.corners[0],
-        bl: br.inverted
-          ? width - br.corners[2] - bl.corners[0] - br.width
-          : width - radBR - bl.corners[0],
-        br: bl.inverted
-          ? width - br.corners[2] - bl.corners[0] - bl.width
-          : width - radBL - br.corners[2],
+      const getSpace = (c: keyof typeof prev, axis: "horiz" | "vert") => {
+        const state = prev[c];
+        const normalRadius = cornerRadius[c];
+        if (!state.inverted) return normalRadius;
+        const { extH, extV } = getExternalIndices(c);
+        return axis === "horiz"
+          ? state.width + state.corners[extH]
+          : state.height + state.corners[extV];
       };
 
-      const maxHeight = {
-        tl: bl.inverted
-          ? height - tl.corners[0] - bl.corners[2] - bl.height
-          : height - radBL - tl.corners[0],
-        tr: br.inverted
-          ? height - tr.corners[2] - br.corners[0] - br.height
-          : height - radTR - br.corners[0],
-        bl: tl.inverted
-          ? height - bl.corners[2] - tl.corners[0] - tl.height
-          : height - radTL - bl.corners[2],
-        br: tr.inverted
-          ? height - br.corners[0] - tr.corners[2] - tr.height
-          : height - radBR - tr.corners[2],
-      };
+      const neighbors = {
+        tl: { h: "tr", v: "bl" },
+        tr: { h: "tl", v: "br" },
+        bl: { h: "br", v: "tl" },
+        br: { h: "bl", v: "tr" },
+      } as const;
+
+      // 2. Calculate absolute boundaries based on neighbors
+      const hNeighbor = neighbors[corner].h;
+      const vNeighbor = neighbors[corner].v;
+      const availableW = setup.width - getSpace(hNeighbor, "horiz");
+      const availableH = setup.height - getSpace(vNeighbor, "vert");
+
+      const { extH, extV } = getExternalIndices(corner);
+
+      let finalW = raw.width;
+      let finalH = raw.height;
+      let finalC = [...raw.corners];
+
+      // 3. If the user is actively changing the 3 radii, clamp them properly
+      if (newValues.corners !== undefined) {
+        const reqC = [...newValues.corners];
+        const isUniformRequest = reqC[0] === reqC[1] && reqC[1] === reqC[2];
+
+        if (isUniformRequest) {
+          // SHARED INPUT: Clamp uniformly so they stay linked.
+          // To fit, a uniform radius (r) must satisfy:
+          // 1. Inner width limits: r + r <= finalW  (r <= finalW / 2)
+          // 2. Inner height limits: r + r <= finalH (r <= finalH / 2)
+          // 3. Outer edge limits: r <= availableW - finalW, etc.
+          const maxUniform = Math.min(
+            finalW / 2,
+            finalH / 2,
+            availableW - finalW,
+            availableH - finalH,
+          );
+
+          const clamped = Math.max(0, Math.min(reqC[0], maxUniform));
+          finalC = [clamped, clamped, clamped];
+        } else {
+          // INDIVIDUAL INPUTS: Clamp each value against the existing space
+          // taken by the OTHER radii to prevent them from squashing each other.
+          const oldC = prev[corner].corners;
+
+          finalC[1] = Math.max(
+            0,
+            Math.min(reqC[1], finalW - oldC[extV], finalH - oldC[extH]),
+          );
+          finalC[extH] = Math.max(
+            0,
+            Math.min(reqC[extH], finalH - oldC[1], availableW - finalW),
+          );
+          finalC[extV] = Math.max(
+            0,
+            Math.min(reqC[extV], finalW - oldC[1], availableH - finalH),
+          );
+        }
+      }
+      // 4. Ensure width and height don't exceed the remaining space left by neighbors
+      const maxW = availableW - finalC[extH];
+      const maxH = availableH - finalC[extV];
+      finalW = Math.min(finalW, maxW);
+      finalH = Math.min(finalH, maxH);
+
+      // 5. Ensure width and height cannot shrink smaller than the radii currently inside them
+      const minW = finalC[1] + finalC[extV];
+      const minH = finalC[1] + finalC[extH];
+      finalW = Math.max(minW, finalW);
+      finalH = Math.max(minH, finalH);
 
       return {
         ...prev,
         [corner]: {
-          ...prev[corner],
-          width: fixed(
-            Math.min(
-              maxWidth[corner],
-              Math.max(
-                prev[corner].corners[0] * 2,
-                newValues.width ?? prev[corner].width,
-              ),
-            ),
-          ),
-          height: fixed(
-            Math.min(
-              maxHeight[corner],
-              Math.max(
-                prev[corner].corners[2] * 2,
-                newValues.height ?? prev[corner].height,
-              ),
-            ),
-          ),
-          inverted: newValues.inverted ?? prev[corner].inverted,
-          corners: newValues.corners ?? prev[corner].corners,
+          ...raw,
+          width: fixed(finalW),
+          height: fixed(finalH),
+          corners: finalC.map((c) => fixed(c)),
         },
       };
     });
@@ -250,6 +285,24 @@ const Controllers = ({
             }
             placeholder="MIX"
             className="pr-5 placeholder:text-sm"
+            onKeyDown={(e) => {
+              const currentCorners = invertedCorners[corner].corners;
+              const isMixed = !areAllEqual(currentCorners);
+
+              if (isMixed && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+                e.preventDefault();
+
+                const direction = e.key === "ArrowUp" ? 1 : -1;
+                const step = e.shiftKey ? 10 : 1;
+                const delta = direction * step;
+
+                updateInvertedCorners(corner, {
+                  corners: currentCorners.map((c) =>
+                    Math.max(0, c + delta),
+                  ) as [number, number, number],
+                });
+              }
+            }}
           />
 
           <button
